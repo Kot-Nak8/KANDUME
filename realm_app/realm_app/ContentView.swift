@@ -4,7 +4,7 @@
 //
 //  Created by 中村幸太 on 2020/12/27.
 //
-//取り組む問題：空のデータは入れないようにする、検索した時に更新したらちゃんと戻らないで再度更新をしようとすると反映されずバグる(更新した時に検索条件から外れるから)どうにかせんとあかん。
+//検索した時に更新したらちゃんと戻らないで再度更新をしようとすると反映されずバグる(更新した時に検索条件から外れて選択しているビューが抜け殻になるから)どうにかせんとあかん。
 
 
 import SwiftUI
@@ -48,8 +48,8 @@ struct ListView: View {
     @State var quan = ""
     @State var day =  Date()
     @ObservedObject var getModel = get_data()
-    @State private var deleteAlert = false
     @State private var updateAlert = false
+    @State private var empty_alert = false
     let gen = ["食品", "日用雑貨" , "備品", "防災用品", "その他"]
     
     //リストを削除する関数
@@ -112,40 +112,48 @@ struct ListView: View {
                                 }
                                     //要素の変更編ボタン
                                 Button(action: {
-                                    let config = Realm.Configuration(schemaVersion :1)
-                                    do{
-                                        let realm = try Realm(configuration: config)
-                                        let result = realm.objects(realm_data.self)
+                                    if self.name.isEmpty || self.quan.isEmpty{
+                                        self.empty_alert = true
                                         self.updateAlert = true
-                                        try realm.write({
-                                            //繰り返しと条件一致での方法しか考えられなかった
-                                            for i in result{
-                                                if i.id == datas.id{
-                                                    i.name = self.name
-                                                    i.quan = self.quan
-                                                    i.day = self.day
-                                                    i.genre = self.genre
-                                                    realm.add(i)
+                                    }else{
+                                        self.empty_alert = false
+                                        let config = Realm.Configuration(schemaVersion :1)
+                                        do{
+                                            let realm = try Realm(configuration: config)
+                                            let result = realm.objects(realm_data.self)
+                                            self.updateAlert = true
+                                            try realm.write({
+                                                //繰り返しと条件一致での方法しか考えられなかった
+                                                for i in result{
+                                                    if i.id == datas.id{
+                                                        i.name = self.name
+                                                        i.quan = self.quan
+                                                        i.day = self.day
+                                                        i.genre = self.genre
+                                                        realm.add(i)
+                                                    }
                                                 }
-                                            }
-                                            print("success")
-                                            print(type(of: datas))
-                                            self.name = ""
-                                            self.quan = ""
-                                            self.genre = "食品"
-                                            self.day = Date()
-                                        })
-                                    }
-                                    catch{
-                                        print(error.localizedDescription)
-                                    }
-                                    
+                                                print("success")
+                                                print(type(of: datas))
+                                                self.name = ""
+                                                self.quan = ""
+                                                self.genre = "食品"
+                                                self.day = Date()
+                                            })
+                                        }
+                                        catch{
+                                            print(error.localizedDescription)
+                                        }
+                                        }
                                     }) {
                                     Text("更新")
                                     }
                                     .alert(isPresented: $updateAlert) {
-                                            Alert(title: Text("更新"),
-                                            message: Text("データの更新完了"))   // 詳細メッセージの追加
+                                        if self.empty_alert {
+                                            return Alert(title: Text("全部入力してね"))
+                                        }else{
+                                            return Alert(title: Text("データ更新完了"))
+                                        }  // 詳細メッセージの追加
                                     }
                                     .padding(10)
                                     Spacer()
@@ -313,9 +321,8 @@ struct S_ListView: View {
     @State var genre = "食品"
     @State var day =  Date()
     @ObservedObject var getModel = get_data()
-    @State private var deleteAlert = false
     @State private var updateAlert = false
-    @State private var showingSecondView = true
+    @State private var empty_alert = false
     
     //リストを削除する関数
     private func deleteRow(offsets: IndexSet){
@@ -392,39 +399,48 @@ struct S_ListView: View {
                                 }
                                     //要素の変更編ボタン
                                 Button(action: {
-                                    let config = Realm.Configuration(schemaVersion :1)
-                                    do{
-                                        let realm = try Realm(configuration: config)
-                                        let result = realm.objects(realm_data.self)
+                                    if self.name.isEmpty || self.quan.isEmpty{
+                                        self.empty_alert = true
                                         self.updateAlert = true
-                                        try realm.write({
-                                            //繰り返しと条件一致での方法しか考えられなかった
-                                            for i in result{
-                                                if i.id == datas.id{
-                                                    i.name = self.name
-                                                    i.quan = self.quan
-                                                    i.day = self.day
-                                                    i.genre = self.genre
-                                                    realm.add(i)
-                                                }
-                                            }
-                                            print("success")
-                                            self.name = ""
-                                            self.quan = ""
-                                            self.genre = "食品"
-                                            self.day = Date()
-                                        })
-                                    }
-                                    catch{
-                                        print(error.localizedDescription)
-                                    }
-                                    
+                                    }else{
+                                        self.empty_alert = false
+                                        self.updateAlert = true
+                                        }
                                     }) {
                                     Text("更新")
                                     }
                                     .alert(isPresented: $updateAlert) {
-                                            Alert(title: Text("更新"),
-                                            message: Text("データの更新完了"))
+                                        if self.empty_alert {
+                                            return Alert(title: Text("全部入力してね"))
+                                        }else{
+                                            return Alert(title: Text("データ更新完了"), dismissButton: .default(Text("OK"),
+                                                action: {let config = Realm.Configuration(schemaVersion :1)
+                                                    do{
+                                                        let realm = try Realm(configuration: config)
+                                                        let result = realm.objects(realm_data.self)
+                                                        try realm.write({
+                                                            //繰り返しと条件一致での方法しか考えられなかった
+                                                            for i in result{
+                                                                if i.id == datas.id{
+                                                                    i.name = self.name
+                                                                    i.quan = self.quan
+                                                                    i.day = self.day
+                                                                    i.genre = self.genre
+                                                                    realm.add(i)
+                                                                }
+                                                            }
+                                                            print("success")
+                                                            print(type(of: datas))
+                                                            self.name = ""
+                                                            self.quan = ""
+                                                            self.genre = "食品"
+                                                            self.day = Date()
+                                                        })
+                                                    }
+                                                    catch{
+                                                        print(error.localizedDescription)
+                                                    }}))
+                                        }  // 詳細メッセージの追加
                                     }
                                     .padding(10)
                                     Spacer()
