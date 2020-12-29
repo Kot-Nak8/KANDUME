@@ -12,8 +12,9 @@ import RealmSwift
 //RealmのEntity
 class realm_data :Object{
     @objc dynamic var id: Int = 0
+    @objc dynamic var genre = ""
     @objc dynamic var name = ""
-    @objc dynamic var age = ""
+    @objc dynamic var quan = ""
     @objc dynamic var day = Date()
     private static var config = Realm.Configuration(schemaVersion :1)
     private static var realm = try! Realm(configuration: config)
