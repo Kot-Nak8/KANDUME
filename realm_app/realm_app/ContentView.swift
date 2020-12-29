@@ -45,7 +45,26 @@ struct ListView: View {
     @ObservedObject var getModel = get_data()
     @State private var deleteAlert = false
     @State private var updateAlert = false
-    @State var datas_view = ""
+    
+    //リストを削除する関数
+    private func deleteRow(offsets: IndexSet){
+        if let index: Int = offsets.first {
+                let config = Realm.Configuration(schemaVersion :1)
+                do{
+                    let realm = try Realm(configuration: config)
+                    let result = realm.objects(realm_data.self)
+                    try! realm.write({
+                        let de = getModel.dataEntities[index].id
+                        for i in result{
+                            if i.id == de{
+                                realm.delete(i)
+                                print(index)
+                            }}})
+                }
+                catch{
+                    print(error.localizedDescription)
+                }
+            }}
     
     var body: some View {
         List {
@@ -54,12 +73,17 @@ struct ListView: View {
                         NavigationView{
                             //遷移のビューを別のビューにまとめたいがdatasを別のビューに渡す方法がわからん
                             VStack{
-                                Text("登録した名前：「 " + "\(datas.name)" + " 」")
-                                TextField("名前の変更", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())
-                                Text("登録した年齢：「 " + "\(datas.age)" + " 」")
-                                TextField("年齢の変更", text: $age).textFieldStyle(RoundedBorderTextFieldStyle())
-                                    Text("登録した日付")
+                                HStack{
+                                    Text("品名：")
+                                    TextField("登録済み：「"+"\(datas.name)" + " 」", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())}
+                                HStack{
+                                    Text("年齢：")
+                                    TextField("登録済み：「"+"\(datas.age)" + " 」", text: $age).textFieldStyle(RoundedBorderTextFieldStyle())}
+                                HStack{
+                                    Text("日付：")
                                     Text("\(datas.day,style: .date)")
+                                    Spacer()
+                                }
                                 DatePicker("新しい日付を選択", selection: $day, displayedComponents: .date)
                                     //要素の変更編ボタン
                                     Button(action: {
@@ -95,45 +119,14 @@ struct ListView: View {
                                                 Alert(title: Text("更新"),
                                                 message: Text("データの更新完了"))   // 詳細メッセージの追加
                                         }
-                                    //削除ボタンを設置
-                                    Button(action: {
-                                        self.deleteAlert = true
-                                        }) {
-                                        Text("削除")
-                                        }.padding(20)
-                                        //削除ボタンを押すと出るアラート
-                                        .alert(isPresented: $deleteAlert) {
-                                                Alert(title: Text("削除"),
-                                                      message: Text("データを削除しますか"),
-                                                      primaryButton: .cancel(Text("キャンセル")),
-                                                      secondaryButton: .destructive(Text("削除"),
-                                                                //削除を押した時の処理
-                                                                //削除した時にホームに戻らないとバグる
-                                                                    action: {
-                                                                        let config = Realm.Configuration(schemaVersion :1)
-                                                                        do{
-                                                                            let realm = try Realm(configuration: config)
-                                                                            let result = realm.objects(realm_data.self)
-                                                                            try! realm.write({
-                                                                                for i in result{
-                                                                                    if i.id == datas.id{
-                                                                                        realm.delete(i)
-                                                                                    }}
-                                                                                })
-                                                                        }
-                                                                        catch{
-                                                                            print(error.localizedDescription)
-                                                                        }
-                                                                    }))
-                                                            }
-                                        }.padding(20)
+                                        }.padding(30)
                         }.navigationBarTitle("Edit Menu", displayMode: .inline)
-                    ){
+                        ){
                 //リストの内容
                 VStack{
                 Text("\(datas.name)" + "　" + "\(datas.age)")
                 Text("\(datas.day,style: .date)")
-                }}}
+                }}}.onDelete(perform: self.deleteRow)
         }
     }
 }
@@ -156,8 +149,8 @@ struct AddView: View {
                 }){
                     Text("写真を選択")
                 }
-                TextField("名前", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())
-                TextField ("年齢", text: $age).textFieldStyle(RoundedBorderTextFieldStyle())
+                TextField("品名(例：電池)", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())
+                TextField ("年齢(例：23)", text: $age).textFieldStyle(RoundedBorderTextFieldStyle())
                 //日付を取得
                 DatePicker("日付を選択", selection: $day, displayedComponents: .date)
 
@@ -187,49 +180,10 @@ struct AddView: View {
                         print(error.localizedDescription)
                     }
                     
-                }) {
-                    Text("データ追加")
-                }.alert(isPresented: $showingAlert) {
-                    Alert(title: Text("データ追加完了"))
-                }
-                
-            //デバッグエリアに保存したものを表示する
-                Button(action: {
-                    let config = Realm.Configuration(schemaVersion :1)
-                    do{
-                        let realm = try Realm(configuration: config)
-                        let result = realm.objects(realm_data.self)
-                        //取り出し
-                        print(result)
+                }) {Text("データ追加")}
+                    .alert(isPresented: $showingAlert) {
+                        Alert(title: Text("データ追加完了"))
                     }
-                    catch{
-                        print(error.localizedDescription)
-                    }
-                    
-                }) {
-                    Text("デバッグエリアに表示")
-                }
-            
-            //データ全削除
-                Button(action: {
-                    let config = Realm.Configuration(schemaVersion :1)
-                    do{
-                        let realm = try Realm(configuration: config)
-                        let result = realm.objects(realm_data.self)
-                        for i in result{
-                            try realm.write({
-                                realm.delete(i)
-                            })
-                        }
-                        print("delete")
-                    }
-                    catch{
-                        print(error.localizedDescription)
-                    }
-                    
-                }) {
-                    Text("データ全削除")
-                }
             }.padding()
         }.navigationBarTitle("New Data", displayMode: .inline)
     }
@@ -238,16 +192,127 @@ struct AddView: View {
 
 //検索のビュー
 struct SearchView: View {
+    @State var s_name = ""
+    @State var s_age = ""
+    @State var s_pday =  Date()
+    @State var s_fday =  Date()
+    @ObservedObject var getModel = get_data()
+    
+    var body: some View {
+        VStack{
+            Text("検索条件")
+            TextField("品名", text: $s_name).textFieldStyle(RoundedBorderTextFieldStyle())
+            TextField("年齢", text: $s_age).textFieldStyle(RoundedBorderTextFieldStyle())
+            NavigationLink(destination:
+                            //検索ボタンを押したら表示されるビュー
+                            S_ListView(s_name: $s_name, s_age: $s_age, s_pday: $s_pday, s_fday: $s_fday)
+                            .navigationBarTitle("Search result", displayMode: .inline)
+                ){
+                Text("検索")
+                }
+        }.padding(30)
+    }
+}
+
+//検索後のビュー
+struct S_ListView: View {
+    
+    @Binding var s_name: String
+    @Binding var s_age: String
+    @Binding var s_pday: Date
+    @Binding var s_fday: Date
     @State var name = ""
     @State var age = ""
     @State var day =  Date()
     @ObservedObject var getModel = get_data()
+    @State private var deleteAlert = false
+    @State private var updateAlert = false
+    @State private var showingSecondView = true
+    
+    //リストを削除する関数
+    private func deleteRow(offsets: IndexSet){
+        if let index: Int = offsets.first {
+                let config = Realm.Configuration(schemaVersion :1)
+                do{
+                    let realm = try Realm(configuration: config)
+                    let result = realm.objects(realm_data.self)
+                    try! realm.write({
+                        let de = getModel.dataEntities[index].id
+                        for i in result{
+                            if i.id == de{
+                                realm.delete(i)
+                                print(index)
+                            }}})
+                }
+                catch{
+                    print(error.localizedDescription)
+                }
+            }}
     
     var body: some View {
-        TextField("名前", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())
-        Text("検索")
+        List {
+            ForEach(getModel.dataEntities.freeze(), id: \.id) { datas in
+                //どちらかが一致していれば表示
+                if s_name == datas.name || s_age == datas.age{
+                NavigationLink(destination:
+                        NavigationView{
+                            VStack{
+                                HStack{
+                                    Text("品名：")
+                                    TextField("登録済み：「"+"\(datas.name)" + "」", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())}
+                                HStack{
+                                    Text("年齢：")
+                                    TextField("登録済み：「"+"\(datas.age)" + "」", text: $age).textFieldStyle(RoundedBorderTextFieldStyle())}
+                                HStack{
+                                    Text("日付：")
+                                    Text("\(datas.day,style: .date)")
+                                    Spacer()
+                                }
+                                DatePicker("新しい日付を選択", selection: $day, displayedComponents: .date)
+                                    //要素の変更編ボタン
+                                    Button(action: {
+                                        self.updateAlert = true
+                                        }) {Text("更新")}
+                                            .alert(isPresented: $updateAlert) {
+                                                Alert(title: Text("更新"),
+                                                      message: Text("データ更新完了"),
+                                                      dismissButton: .default(Text("OK"),
+                                                                    action: {
+                                                                        let config = Realm.Configuration(schemaVersion :1)
+                                                                        do{
+                                                                            let realm = try Realm(configuration: config)
+                                                                            let result = realm.objects(realm_data.self)
+                                                                            try! realm.write({
+                                                                                for i in result{
+                                                                                    if i.id == datas.id{
+                                                                                        i.name = self.name
+                                                                                        i.age = self.age
+                                                                                        i.day = self.day
+                                                                                        realm.add(i)
+                                                                                        self.name = ""
+                                                                                        self.age = ""
+                                                                                        self.day = Date()
+                                                                                    }}
+                                                                                })
+                                                                        }
+                                                                        catch{
+                                                                            print(error.localizedDescription)
+                                                                        }
+                                                                    }))
+                                                        }
+                                        }.padding(30)
+                        }.navigationBarTitle("Edit Menu", displayMode: .inline)
+                        ){
+                //リストの内容
+                VStack{
+                    Text("\(datas.name)" + "　" + "\(datas.age)")
+                    Text("\(datas.day,style: .date)")
+                }}}
+            }.onDelete(perform: self.deleteRow)//スワイプで削除
+        }
     }
 }
+
 
 
 struct ContentView_Previews: PreviewProvider {
