@@ -57,9 +57,9 @@ struct ListView: View {
     let gen = ["食品", "日用雑貨" , "備品", "防災用品", "その他"]
     
     //リストを削除する関数
-    private func deleteRow(offsets: IndexSet){
-        if let index: Int = offsets.first {
-                let config = Realm.Configuration(schemaVersion :1)
+    private func deleteRow(offsets: IndexSet) {
+        let index: Int = offsets.first ?? -1
+                let config = Realm.Configuration(schemaVersion : 1)
                 do{
                     let realm = try Realm(configuration: config)
                     let result = realm.objects(realm_data.self)
@@ -70,11 +70,11 @@ struct ListView: View {
                                 realm.delete(i)
                                 print(index)
                             }}})
-                }
+                    }
                 catch{
                     print(error.localizedDescription)
                 }
-            }}
+            }
     
     var body: some View {
         List {
@@ -103,10 +103,10 @@ struct ListView: View {
                                                         }}}
                                     HStack{
                                     Text("品名：")
-                                        TextField("登録済み：「"+"\(datas.name)" + " 」", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())}
+                                        TextField("登録済み：「"+"\(datas.name)"+" 」", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())}
                                 HStack{
                                     Text("個数：")
-                                    TextField("登録済み：「"+"\(datas.quan)" + " 」", text: $quan).textFieldStyle(RoundedBorderTextFieldStyle())}
+                                    TextField("登録済み：「"+"\(datas.quan)"+" 」", text: $quan).textFieldStyle(RoundedBorderTextFieldStyle())}
                                 HStack{
                                     Text("登録済み期限：")
                                     Text("\(datas.day,style: .date)")
@@ -166,7 +166,7 @@ struct ListView: View {
                         ){
                 //リストの内容
                 VStack{
-                Text("\(datas.name)" + "　" + "\(datas.quan)")
+                Text("\(datas.name)"+"　"+"\(datas.quan)")
                 Text("\(datas.day,style: .date)")
                 }}}.onDelete(perform: envEditMode?.wrappedValue.isEditing ?? false ? self.deleteRow : nil)
         }
@@ -345,23 +345,22 @@ struct S_ListView: View {
     
     //リストを削除する関数
     private func deleteRow(offsets: IndexSet){
-        if let index: Int = offsets.first {
+        let index: Int = offsets.first ?? -1
                 let config = Realm.Configuration(schemaVersion :1)
                 do{
                     let realm = try Realm(configuration: config)
                     let result = realm.objects(realm_data.self)
+                    let de = getModel.dataEntities[index].id
                     try! realm.write({
-                        let de = getModel.dataEntities[index].id
                         for i in result{
                             if i.id == de{
                                 realm.delete(i)
-                                print(index)
                             }}})
                 }
                 catch{
                     print(error.localizedDescription)
                 }
-            }}
+            }
     
     //検索条件の関数
     private func s_check(s_genre: String, s_name: String, s_quan: String, s_pday: Date, s_fday: Date, d_genre: String, d_name: String, d_quan: String, d_day: Date, flag: Bool) -> Bool {
@@ -421,7 +420,6 @@ struct S_ListView: View {
                 //検索条件に引っ掛かれば表示
                 if s_check(s_genre: self.s_genre, s_name: self.s_name, s_quan: self.s_quan, s_pday: self.s_pday, s_fday: self.s_fday, d_genre: datas.genre, d_name: datas.name, d_quan: datas.quan, d_day: datas.day, flag: self.flag) {
                 NavigationLink(destination:
-                        //NavigationView{
                             VStack{
                                 Form{
                                     HStack{
@@ -454,7 +452,6 @@ struct S_ListView: View {
                                 }
                                 BackView(name: $name, quan: $quan, genre: $genre, day: $day, i_d: $i_d, empty_alert: $empty_alert).padding(15)
                                         }
-                        //}.navigationBarTitle("Edit Menu", displayMode: .inline)
                         ){
                 //リストの内容
                 VStack{
@@ -480,7 +477,7 @@ struct BackView: View {
     
     var body: some View {
         Button(action: {
-            if self.name.isEmpty || self.quan.isEmpty{
+            if self.name.isEmpty || self.quan.isEmpty {
                 self.empty_alert = true
                 self.updateAlert = true
             }else{
@@ -508,8 +505,10 @@ struct BackView: View {
                                             i.day = self.day
                                             i.genre = self.genre
                                             realm.add(i)
+                                            print(i.id)
                                         }
                                     }
+                                    print(i_d)
                                     print("success")
                                     self.name = ""
                                     self.quan = ""
