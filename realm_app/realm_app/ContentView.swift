@@ -367,14 +367,20 @@ struct S_ListView: View {
         var TF = false
         let cal = Calendar(identifier: .gregorian)
         if !flag {
-            if s_genre == "選択しない"{
-                if s_name == d_name || s_quan == d_quan{
-                    TF = true
-                }
+            if s_name.isEmpty && s_quan.isEmpty{
+                if s_genre == d_genre{
+                        TF = true
+                    }
             }else{
-                if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
-                    TF = true
-                }}
+                if s_genre == "選択しない"{
+                    if s_name == d_name || s_quan == d_quan{
+                        TF = true
+                    }
+                }else{
+                    if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
+                        TF = true
+                    }}
+            }
         }else{
             //日付の差とか計算
             let deff = cal.dateComponents([.day], from: s_pday, to: s_fday).day!
@@ -382,6 +388,11 @@ struct S_ListView: View {
             if deff >= 0 {
                 for i in 0...deff {
                     if cal.dateComponents([.day], from: s_pday.addingTimeInterval(TimeInterval(60 * 60 * 24 * i)), to: d_day).day! == 0{
+                        if s_name.isEmpty && s_quan.isEmpty{
+                            if s_genre == d_genre{
+                                    TF = true
+                                }
+                        }else{
                             if s_genre == "選択しない"{
                                 if s_name == d_name || s_quan == d_quan{
                                     TF = true
@@ -389,13 +400,18 @@ struct S_ListView: View {
                             }else{
                                 if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
                                     TF = true
-                                }}
+                                }}}
                     }
                 }
             //右側で選択した期限の方が過去の場合
             }else{
                 for i in 0...abs(deff) {
                     if cal.dateComponents([.day], from: s_fday.addingTimeInterval(TimeInterval(60 * 60 * 24 * i)), to: d_day).day! == 0{
+                        if s_name.isEmpty && s_quan.isEmpty{
+                            if s_genre == d_genre{
+                                    TF = true
+                                }
+                        }else{
                             if s_genre == "選択しない"{
                                 if s_name == d_name || s_quan == d_quan{
                                     TF = true
@@ -404,7 +420,7 @@ struct S_ListView: View {
                                 if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
                                     TF = true
                                 }}
-                    }
+                        }}
                 }
                 
             }
