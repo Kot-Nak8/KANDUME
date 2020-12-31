@@ -4,7 +4,6 @@
 //
 //  Created by 中村幸太 on 2020/12/27.
 //
-//検索した時に更新したらちゃんと戻らないで再度更新をしようとすると反映されずバグる(更新した時に検索条件から外れて選択しているビューが抜け殻になるから)どうにかせんとあかん。
 
 
 import SwiftUI
@@ -22,7 +21,8 @@ struct ContentView: View {
                         ){ Image(systemName: "plus")
                                 .resizable()
                                 .frame(width: 20, height: 20)
-                        })
+                        }
+                        ,trailing: EditButton())
             }.tabItem {
                     Image(systemName: "house")
                     Text("Home")}
@@ -41,6 +41,9 @@ struct ContentView: View {
 
 
 
+
+
+
 //リスト表示とデータ変更のビュー
 struct ListView: View {
     @State var genre = "食品"
@@ -50,6 +53,7 @@ struct ListView: View {
     @ObservedObject var getModel = get_data()
     @State private var updateAlert = false
     @State private var empty_alert = false
+    @Environment(\.editMode) var envEditMode
     let gen = ["食品", "日用雑貨" , "備品", "防災用品", "その他"]
     
     //リストを削除する関数
@@ -164,17 +168,15 @@ struct ListView: View {
                 VStack{
                 Text("\(datas.name)" + "　" + "\(datas.quan)")
                 Text("\(datas.day,style: .date)")
-                }}}.onDelete(perform: self.deleteRow)
+                }}}.onDelete(perform: envEditMode?.wrappedValue.isEditing ?? false ? self.deleteRow : nil)
         }
     }
 }
 
-struct OnotherView: View {
-    @Binding var datas: realm_data
-    var body: some View {
-        Text("\(datas.name)")
-    }
-}
+
+
+
+
 
 
 
@@ -193,7 +195,6 @@ struct AddView: View {
             VStack{
             //入力するところ
                 //写真を追加するボタン
-                Spacer()
                 Form{
                     HStack{
                         Spacer()
@@ -274,32 +275,48 @@ struct AddView: View {
 
 
 
+
+
+
 //検索のビュー
 struct SearchView: View {
     @State var s_name = ""
     @State var s_quan = ""
     @State var s_pday =  Date()
     @State var s_fday =  Date()
+    @State var flag = false
     @State var s_genre = "選択しない"
     let gen = ["選択しない","食品", "日用雑貨" , "備品", "防災用品", "その他"]
     @ObservedObject var getModel = get_data()
     
     var body: some View {
         VStack{
-            Picker(selection: $s_genre, label: Text("ジャンルを選択：")) {
+            Form{
+            Picker(selection: $s_genre, label: Text("ジャンル：")) {
                         ForEach(gen, id: \.self) { Gen in  // id指定の繰り返し
                             Text(Gen)
                         }}
             TextField("品名", text: $s_name).textFieldStyle(RoundedBorderTextFieldStyle())
             TextField("個数", text: $s_quan).textFieldStyle(RoundedBorderTextFieldStyle())
+            VStack{
+                HStack{
+                    Text("期限を有効にする")
+                    Toggle("ラベル", isOn : $flag).labelsHidden()
+                }
+                HStack{
+                    DatePicker("", selection: $s_pday, displayedComponents: .date)
+                    DatePicker("〜", selection: $s_fday, displayedComponents: .date)
+                    Spacer()
+                    }
+                }}
             NavigationLink(destination:
                             //検索ボタンを押したら表示されるビュー
-                            S_ListView(s_name: $s_name, s_quan: $s_quan, s_pday: $s_pday, s_fday: $s_fday, s_genre: $s_genre)
+                            S_ListView(s_name: $s_name, s_quan: $s_quan, s_pday: $s_pday, s_fday: $s_fday, s_genre: $s_genre, flag: $flag)
                             .navigationBarTitle("Search result", displayMode: .inline)
                 ){
-                Text("検索")
-                }
-        }.padding(30)
+                Text("検索").padding(15)
+            }
+        }
     }
 }
 
@@ -315,6 +332,7 @@ struct S_ListView: View {
     @Binding var s_pday: Date
     @Binding var s_fday: Date
     @Binding var s_genre: String
+    @Binding var flag: Bool
     let gen = ["食品", "日用雑貨" , "備品", "防災用品", "その他"]
     @State var name = ""
     @State var quan = ""
@@ -322,7 +340,8 @@ struct S_ListView: View {
     @State var day =  Date()
     @ObservedObject var getModel = get_data()
     @State private var updateAlert = false
-    @State private var empty_alert = false
+    @State var empty_alert = false
+    @State var i_d = Int()
     
     //リストを削除する関数
     private func deleteRow(offsets: IndexSet){
@@ -345,16 +364,53 @@ struct S_ListView: View {
             }}
     
     //検索条件の関数
-    private func s_check(s_genre: String, s_name: String, s_quan: String, d_genre: String, d_name: String, d_quan: String) -> Bool {
+    private func s_check(s_genre: String, s_name: String, s_quan: String, s_pday: Date, s_fday: Date, d_genre: String, d_name: String, d_quan: String, d_day: Date, flag: Bool) -> Bool {
         var TF = false
-        if s_genre == "選択しない"{
-            if s_name == d_name || s_quan == d_quan{
-                TF = true
-            }
+        let cal = Calendar(identifier: .gregorian)
+        if !flag {
+            if s_genre == "選択しない"{
+                if s_name == d_name || s_quan == d_quan{
+                    TF = true
+                }
+            }else{
+                if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
+                    TF = true
+                }}
         }else{
-            if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
-                TF = true
-        }}
+            //日付の差とか計算
+            let deff = cal.dateComponents([.day], from: s_pday, to: s_fday).day!
+            //左側で選択した期限の方が過去の場合
+            if deff >= 0 {
+                for i in 0...deff {
+                    if cal.dateComponents([.day], from: s_pday.addingTimeInterval(TimeInterval(60 * 60 * 24 * i)), to: d_day).day! == 0{
+                            if s_genre == "選択しない"{
+                                if s_name == d_name || s_quan == d_quan{
+                                    TF = true
+                                }
+                            }else{
+                                if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
+                                    TF = true
+                                }}
+                    }
+                }
+            //右側で選択した期限の方が過去の場合
+            }else{
+                for i in 0...abs(deff) {
+                    if cal.dateComponents([.day], from: s_fday.addingTimeInterval(TimeInterval(60 * 60 * 24 * i)), to: d_day).day! == 0{
+                            if s_genre == "選択しない"{
+                                if s_name == d_name || s_quan == d_quan{
+                                    TF = true
+                                }
+                            }else{
+                                if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
+                                    TF = true
+                                }}
+                    }
+                }
+                
+            }
+
+        }
         return TF
         }
     
@@ -363,11 +419,10 @@ struct S_ListView: View {
         List {
             ForEach(getModel.dataEntities.freeze(), id: \.id) { datas in
                 //検索条件に引っ掛かれば表示
-                if s_check(s_genre: self.s_genre, s_name: self.s_name, s_quan: self.s_quan, d_genre: datas.genre, d_name: datas.name, d_quan: datas.quan) {
+                if s_check(s_genre: self.s_genre, s_name: self.s_name, s_quan: self.s_quan, s_pday: self.s_pday, s_fday: self.s_fday, d_genre: datas.genre, d_name: datas.name, d_quan: datas.quan, d_day: datas.day, flag: self.flag) {
                 NavigationLink(destination:
-                        NavigationView{
+                        //NavigationView{
                             VStack{
-                                Spacer()
                                 Form{
                                     HStack{
                                         Spacer()
@@ -397,70 +452,82 @@ struct S_ListView: View {
                                 }
                                 DatePicker("新しい期限を選択", selection: $day, displayedComponents: .date)
                                 }
-                                    //要素の変更編ボタン
-                                Button(action: {
-                                    if self.name.isEmpty || self.quan.isEmpty{
-                                        self.empty_alert = true
-                                        self.updateAlert = true
-                                    }else{
-                                        self.empty_alert = false
-                                        self.updateAlert = true
+                                BackView(name: $name, quan: $quan, genre: $genre, day: $day, i_d: $i_d, empty_alert: $empty_alert).padding(15)
                                         }
-                                    }) {
-                                    Text("更新")
-                                    }
-                                    .alert(isPresented: $updateAlert) {
-                                        if self.empty_alert {
-                                            return Alert(title: Text("全部入力してね"))
-                                        }else{
-                                            return Alert(title: Text("データ更新完了"), dismissButton: .default(Text("OK"),
-                                                action: {let config = Realm.Configuration(schemaVersion :1)
-                                                    do{
-                                                        let realm = try Realm(configuration: config)
-                                                        let result = realm.objects(realm_data.self)
-                                                        try realm.write({
-                                                            //繰り返しと条件一致での方法しか考えられなかった
-                                                            for i in result{
-                                                                if i.id == datas.id{
-                                                                    i.name = self.name
-                                                                    i.quan = self.quan
-                                                                    i.day = self.day
-                                                                    i.genre = self.genre
-                                                                    realm.add(i)
-                                                                }
-                                                            }
-                                                            print("success")
-                                                            print(type(of: datas))
-                                                            self.name = ""
-                                                            self.quan = ""
-                                                            self.genre = "食品"
-                                                            self.day = Date()
-                                                        })
-                                                    }
-                                                    catch{
-                                                        print(error.localizedDescription)
-                                                    }}))
-                                        }  // 詳細メッセージの追加
-                                    }
-                                    .padding(10)
-                                    Spacer()
-                                        }
-                        }.navigationBarTitle("Edit Menu", displayMode: .inline)
+                        //}.navigationBarTitle("Edit Menu", displayMode: .inline)
                         ){
                 //リストの内容
                 VStack{
                     Text("\(datas.name)" + "　" + "\(datas.quan)")
                     Text("\(datas.day,style: .date)")
-                }}}
+                }.onTapGesture{self.i_d = datas.id}}}
             }.onDelete(perform: self.deleteRow)//スワイプで削除
         }
     }
 }
 
-
+//検索後の更新で戻るための更新ボタン
+struct BackView: View {
+    @Binding var name: String
+    @Binding var quan: String
+    @Binding var genre: String
+    @Binding var day: Date
+    @Binding var i_d: Int
+    @Binding var empty_alert: Bool
+    //これで前のビューに戻る
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @State private var updateAlert = false
+    
+    var body: some View {
+        Button(action: {
+            if self.name.isEmpty || self.quan.isEmpty{
+                self.empty_alert = true
+                self.updateAlert = true
+            }else{
+                self.empty_alert = false
+                self.updateAlert = true
+                }
+            }) {
+            Text("更新")
+            }
+            .alert(isPresented: $updateAlert) {
+                if self.empty_alert {
+                    return Alert(title: Text("全部入力してね"))
+                }else{
+                    return Alert(title: Text("データ更新完了"), dismissButton: .default(Text("OK"),
+                        action: {
+                            let config = Realm.Configuration(schemaVersion :1)
+                            do{
+                                let realm = try Realm(configuration: config)
+                                let result = realm.objects(realm_data.self)
+                                try realm.write({
+                                    for i in result{
+                                        if i.id == i_d{
+                                            i.name = self.name
+                                            i.quan = self.quan
+                                            i.day = self.day
+                                            i.genre = self.genre
+                                            realm.add(i)
+                                        }
+                                    }
+                                    print("success")
+                                    self.name = ""
+                                    self.quan = ""
+                                    self.genre = "食品"
+                                    self.day = Date()
+                                    self.presentationMode.wrappedValue.dismiss()
+                                })
+                            }
+                            catch{
+                                print(error.localizedDescription)
+                            }}))}}
+        }
+    }
+      
+                    
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()//.environmentObject(get_data())
+        ContentView()
     }
 }

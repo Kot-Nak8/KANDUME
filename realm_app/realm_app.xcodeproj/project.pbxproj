@@ -38,7 +38,7 @@
 /* Begin PBXFileReference section */
 		87ABE2DB259873CD00560A95 /* realm_app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = realm_app.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		87ABE2DE259873CD00560A95 /* realm_appApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = realm_appApp.swift; sourceTree = "<group>"; };
-		87ABE2E0259873CD00560A95 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		87ABE2E0259873CD00560A95 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; tabWidth = 4; };
 		87ABE2E2259873D100560A95 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		87ABE2E5259873D100560A95 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		87ABE2E7259873D100560A95 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
