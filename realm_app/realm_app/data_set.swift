@@ -52,3 +52,27 @@ class get_data : ObservableObject{
             notificationTokens.forEach { $0.invalidate() }
         }
 }
+
+
+//通知設定の値を保持するUserDefaultsのクラス
+class Setting: ObservableObject {
+    //アプリ起動時に通知の許可を迫るか
+    @Published var alert_p : Bool {
+        didSet {
+            UserDefaults.standard.set(alert_p, forKey: "alert_p")
+        }
+    }
+    
+    // 通知を許可するかしないか
+    @Published var Alert_Push: Bool {
+        didSet {
+            UserDefaults.standard.set(Alert_Push, forKey: "Alert_Push")
+        }
+    }
+    
+    /// 初期化処理
+    init() {
+        alert_p = UserDefaults.standard.bool(forKey: "alert_p")
+        Alert_Push = UserDefaults.standard.bool(forKey: "Alert_Push")
+    }
+}

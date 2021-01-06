@@ -9,34 +9,74 @@
 import SwiftUI
 import RealmSwift
 
+
 struct ContentView: View {
+    @ObservedObject var setting = Setting()//UserDefaultsなので変更が保持される
+    @State var showingAlert = false //通知の許可アラートのフラグ
     
     var body: some View {
         TabView{
-            NavigationView{
-                ListView()
-                    .navigationBarTitle("Home", displayMode: .inline)
-                    .navigationBarItems(leading: NavigationLink(destination:
-                        AddView()
-                        ){ Image(systemName: "plus")
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                        }
-                        ,trailing: EditButton())
-            }.tabItem {
-                    Image(systemName: "house")
-                    Text("Home")}
-            NavigationView{
-                SearchView()
-                    .navigationBarTitle("Search", displayMode: .inline)
-            }.tabItem {
-                Image(systemName: "magnifyingglass")
-                Text("Search")}
-        }
+                //ホームタブ
+                NavigationView{
+                    ListView()
+                        .navigationBarTitle("Home", displayMode: .inline)
+                        .navigationBarItems(leading: NavigationLink(destination:
+                            AddView()
+                            ){ Image(systemName: "plus")
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                            }
+                            ,trailing: EditButton())
+                }.tabItem {
+                        Image(systemName: "house")
+                        Text("Home")}
+                //ホームタブここまで
+                //検索タブ
+                NavigationView{
+                    SearchView()
+                        .navigationBarTitle("Search", displayMode: .inline)
+                }.tabItem {
+                    Image(systemName: "magnifyingglass")
+                    Text("Search")}
+                //検索タブここまで
+                //設定タブ
+                NavigationView{
+                    VStack{
+                        Text("通知設定")
+                        //setting.Alert_Pushがtrueの場合通知を送るようにする
+                        Toggle("ラベル", isOn : $setting.Alert_Push).labelsHidden()
+                        }.navigationBarTitle("Setting", displayMode: .inline)
+                }.tabItem {
+                    Image(systemName: "gearshape")
+                    Text("Setting")}
+                //設定タブここまで
+
+            //アプリ起動時にonApperでsetting.alertがfalseならshowingAlertをtrueにして.alertを表示
+        }.onAppear(perform: {
+            sleep(1)//ビューの表示を１秒遅らせることで一瞬で消えてしまうタイトル画面を１秒にする
+            if !setting.alert_p {
+                self.showingAlert = true //setting.alert_pがfalseの場合アラート表示
+            }
+            })
+            //アラートでどちらのボタンを押してもsetting.alert_pがtrueになるのでonApperでshowing_Alertがtrueにはならなくなる
+            //よってアプリ初回起動時のみにアラートが表示される
+         .alert(isPresented: $showingAlert) {
+                    Alert(title: Text("通知設定"),
+                          message: Text("品物の通知を受け取れるよ！"),
+                          primaryButton: .default(Text("拒否"),action:{
+                                                    //拒否された時の処理
+                                                    print("拒否された")
+                                                    setting.alert_p = true
+                          }),
+                          secondaryButton: .default(Text("許可"),action:{
+                                                    //許可された時の処理
+                                                    print("許可された")
+                                                    setting.Alert_Push = true
+                                                    setting.alert_p = true
+                          }))
+                }
     }
 }
-
-
 
 
 
@@ -78,13 +118,10 @@ struct ListView: View {
     
     var body: some View {
         List {
+            //freeze()を付けないと更新ができない。理由は知らない
             ForEach(getModel.dataEntities.freeze(), id: \.id) { datas in
                 NavigationLink(destination:
-                        NavigationView{
-                            //遷移のビューを別のビューにまとめたいがdatasを別のビューに渡す方法がわからん
-                            //OnotherView(datas: datas)
                             VStack{
-                                //Spacer()
                                 Form{
                                     HStack{
                                         Spacer()
@@ -161,8 +198,7 @@ struct ListView: View {
                                     }
                                     .padding(10)
                                     Spacer()
-                                    }
-                        }.navigationBarTitle("Edit Menu", displayMode: .inline)
+                                    }.navigationBarTitle("Edit Menu", displayMode: .inline)
                         ){
                 //リストの内容
                 VStack{
@@ -191,7 +227,6 @@ struct AddView: View {
     let gen = ["食品", "日用雑貨" , "備品", "防災用品", "その他"]
     
     var body: some View {
-        NavigationView{
             VStack{
             //入力するところ
                 //写真を追加するボタン
@@ -266,8 +301,7 @@ struct AddView: View {
                     }
                     .padding(10)
                 Spacer()
-            }
-        }.navigationBarTitle("New Data", displayMode: .inline)
+            }.navigationBarTitle("New Data", displayMode: .inline)
     }
 }
 
@@ -287,7 +321,6 @@ struct SearchView: View {
     @State var flag = false
     @State var s_genre = "選択しない"
     let gen = ["選択しない","食品", "日用雑貨" , "備品", "防災用品", "その他"]
-    @ObservedObject var getModel = get_data()
     
     var body: some View {
         VStack{
@@ -466,14 +499,19 @@ struct S_ListView: View {
                                 }
                                 DatePicker("新しい期限を選択", selection: $day, displayedComponents: .date)
                                 }
-                                BackView(name: $name, quan: $quan, genre: $genre, day: $day, i_d: $i_d, empty_alert: $empty_alert).padding(15)
-                                        }
+                                BackView(name: $name, quan: $quan, genre: $genre, day: $day, i_d: $i_d, empty_alert: $empty_alert)
+                                    .padding(15)
+                                        }.onTapGesture{
+                                            self.i_d = datas.id
+                                            print("tapgesture")
+                                            }
                         ){
                 //リストの内容
                 VStack{
                     Text("\(datas.name)" + "　" + "\(datas.quan)")
                     Text("\(datas.day,style: .date)")
-                }.onTapGesture{self.i_d = datas.id}}}
+                }
+                }}
             }.onDelete(perform: self.deleteRow)//スワイプで削除
         }
     }
@@ -510,10 +548,12 @@ struct BackView: View {
                     return Alert(title: Text("データ更新完了"), dismissButton: .default(Text("OK"),
                         action: {
                             let config = Realm.Configuration(schemaVersion :1)
+                            print("更新ボタン")
                             do{
                                 let realm = try Realm(configuration: config)
                                 let result = realm.objects(realm_data.self)
                                 try realm.write({
+                                    print(result)
                                     for i in result{
                                         if i.id == i_d{
                                             i.name = self.name
