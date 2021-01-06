@@ -8,9 +8,14 @@
 
 import SwiftUI
 import RealmSwift
+import UIKit
 
 
 struct ContentView: View {
+    init() {
+            //UITabBar.appearance().unselectedItemTintColor = UIColor.orange
+        }
+    
     @ObservedObject var setting = Setting()//UserDefaultsなので変更が保持される
     @State var showingAlert = false //通知の許可アラートのフラグ
     
@@ -26,7 +31,7 @@ struct ContentView: View {
                                     .resizable()
                                     .frame(width: 20, height: 20)
                             }
-                            ,trailing: EditButton())
+                        ,trailing: MyEditButton())
                 }.tabItem {
                         Image(systemName: "house")
                         Text("Home")}
@@ -75,11 +80,35 @@ struct ContentView: View {
                                                     setting.alert_p = true
                           }))
                 }
+          .accentColor(.orange) //オレンジ色にしてみた
     }
 }
 
 
 
+
+//エディットボタン、ホーム画面で削除するためのボタン。ゴミ箱ボタン
+struct MyEditButton: View {
+    @Environment(\.editMode) var editMode
+    
+    var body: some View {
+        Button(action: {
+            withAnimation() {
+                if editMode?.wrappedValue.isEditing == true {
+                    editMode?.wrappedValue = .inactive
+                } else {
+                    editMode?.wrappedValue = .active
+                }
+            }
+        }) {
+            if editMode?.wrappedValue.isEditing == true {
+                Image(systemName:"trash.slash")
+            } else {
+                Image(systemName:"trash")
+            }
+        }
+    }
+}
 
 
 
