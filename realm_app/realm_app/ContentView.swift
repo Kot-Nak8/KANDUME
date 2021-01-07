@@ -8,14 +8,10 @@
 
 import SwiftUI
 import RealmSwift
-import UIKit
+//import UIKit
 
 
 struct ContentView: View {
-    init() {
-            //UITabBar.appearance().unselectedItemTintColor = UIColor.orange
-        }
-    
     @ObservedObject var setting = Setting()//UserDefaultsなので変更が保持される
     @State var showingAlert = false //通知の許可アラートのフラグ
     
@@ -117,7 +113,7 @@ struct MyEditButton: View {
 struct ListView: View {
     @State var genre = "食品"
     @State var name = ""
-    @State var quan = ""
+    @State var memo = ""
     @State var day =  Date()
     @ObservedObject var getModel = get_data()
     @State private var updateAlert = false
@@ -161,28 +157,21 @@ struct ListView: View {
                                         }
                                         Spacer()
                                         }
-                                    VStack{
-                                        Text("登録済み："+"\(datas.genre)")
-                                        Picker(selection: $genre, label: Text("ジャンルを選択：")) {
+                                    Picker(selection: $genre, label: Text("ジャンル：")) {
                                                         ForEach(gen, id: \.self) { Gen in  // id指定の繰り返し
                                                             Text(Gen)
-                                                        }}}
+                                                        }}
                                     HStack{
                                     Text("品名：")
                                         TextField("登録済み：「"+"\(datas.name)"+" 」", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())}
                                 HStack{
-                                    Text("個数：")
-                                    TextField("登録済み：「"+"\(datas.quan)"+" 」", text: $quan).textFieldStyle(RoundedBorderTextFieldStyle())}
-                                HStack{
-                                    Text("登録済み期限：")
-                                    Text("\(datas.day,style: .date)")
-                                    Spacer()
-                                }
-                                DatePicker("新しい期限を選択", selection: $day, displayedComponents: .date)
+                                    Text("メモ：")
+                                    TextField("登録済み：「"+"\(datas.memo)"+" 」", text: $memo).textFieldStyle(RoundedBorderTextFieldStyle())}
+                                DatePicker("期限：", selection: $day, displayedComponents: .date)
                                 }
                                     //要素の変更編ボタン
                                 Button(action: {
-                                    if self.name.isEmpty || self.quan.isEmpty{
+                                    if self.name.isEmpty{
                                         self.empty_alert = true
                                         self.updateAlert = true
                                     }else{
@@ -197,18 +186,12 @@ struct ListView: View {
                                                 for i in result{
                                                     if i.id == datas.id{
                                                         i.name = self.name
-                                                        i.quan = self.quan
+                                                        i.memo = self.memo
                                                         i.day = self.day
                                                         i.genre = self.genre
                                                         realm.add(i)
                                                     }
                                                 }
-                                                print("success")
-                                                print(type(of: datas))
-                                                self.name = ""
-                                                self.quan = ""
-                                                self.genre = "食品"
-                                                self.day = Date()
                                             })
                                         }
                                         catch{
@@ -220,18 +203,24 @@ struct ListView: View {
                                     }
                                     .alert(isPresented: $updateAlert) {
                                         if self.empty_alert {
-                                            return Alert(title: Text("全部入力してね"))
+                                            return Alert(title: Text("品名を入力してね"))
                                         }else{
                                             return Alert(title: Text("データ更新完了"))
                                         }  // 詳細メッセージの追加
                                     }
                                     .padding(10)
                                     Spacer()
-                                    }.navigationBarTitle("Edit Menu", displayMode: .inline)
+                            }.onAppear(perform: {
+                                self.genre = datas.genre
+                                self.name = datas.name
+                                self.memo = datas.memo
+                                self.day = datas.day
+                                }) //リストをタップして編集画面を表示すると行う処理、これで編集画面に保存したデータが表示される
+                             .navigationBarTitle("Edit Menu", displayMode: .inline)
                         ){
                 //リストの内容
                 VStack{
-                Text("\(datas.name)"+"　"+"\(datas.quan)")
+                Text("\(datas.name)")
                 Text("\(datas.day,style: .date)")
                 }}}.onDelete(perform: envEditMode?.wrappedValue.isEditing ?? false ? self.deleteRow : nil)
         }
@@ -248,7 +237,7 @@ struct ListView: View {
 //データ追加のビュー
 struct AddView: View {
     @State var name = ""
-    @State var quan = ""
+    @State var memo = ""
     @State var day =  Date()
     @State private var showingAlert = false
     @State private var empty_alert = false
@@ -270,7 +259,7 @@ struct AddView: View {
                         Spacer()
                         }
                     
-                //ジャンルや品名、個数の入力
+                //ジャンルや品名、メモの入力
                     Picker(selection: $genre, label: Text("ジャンルを選択：")) {
                                 ForEach(gen, id: \.self) { Gen in  // id指定の繰り返し
                                     Text(Gen)
@@ -280,15 +269,15 @@ struct AddView: View {
                         TextField("(例：電池)", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())
                         }
                     HStack{
-                        Text("個数：")
-                        TextField ("(例：2)", text: $quan).textFieldStyle(RoundedBorderTextFieldStyle())
+                        Text("メモ：")
+                        TextField ("(例：2個買った)", text: $memo).textFieldStyle(RoundedBorderTextFieldStyle())
                         
                         }
                     DatePicker("期限を選択", selection: $day, displayedComponents: .date)}
 
                 //入力したのを保存するボタン
                 Button(action: {
-                    if self.name.isEmpty || self.quan.isEmpty{ //どっちかが空だと追加しない
+                    if self.name.isEmpty{ //品名が空だと追加しない
                         self.empty_alert = true
                         self.showingAlert = true
                     }else{
@@ -302,14 +291,14 @@ struct AddView: View {
                             var maxId: Int { return try! Realm().objects(realm_data.self).sorted(byKeyPath: "id").last?.id ?? 0 }
                             newdata.id = maxId + 1
                             newdata.name = self.name
-                            newdata.quan = self.quan
+                            newdata.memo = self.memo
                             newdata.genre = self.genre
                             newdata.day = self.day
                             try realm.write({
                                 realm.add(newdata)
                                 print("success")
                                 self.name = ""
-                                self.quan = ""
+                                self.memo = ""
                                 self.genre = "食品"
                                 self.day = Date()
                                 self.showingAlert = true
@@ -323,7 +312,7 @@ struct AddView: View {
                     }) {Text("データ追加")}
                         .alert(isPresented: $showingAlert) {
                             if self.empty_alert {
-                                return Alert(title: Text("全部入力してね"))
+                                return Alert(title: Text("品名を入力してね"))
                             }else{
                                 return Alert(title: Text("データ追加完了"))
                             }
@@ -344,7 +333,7 @@ struct AddView: View {
 //検索のビュー
 struct SearchView: View {
     @State var s_name = ""
-    @State var s_quan = ""
+    //@State var s_memo = ""
     @State var s_pday =  Date()
     @State var s_fday =  Date()
     @State var flag = false
@@ -359,7 +348,6 @@ struct SearchView: View {
                             Text(Gen)
                         }}
             TextField("品名", text: $s_name).textFieldStyle(RoundedBorderTextFieldStyle())
-            TextField("個数", text: $s_quan).textFieldStyle(RoundedBorderTextFieldStyle())
             VStack{
                 HStack{
                     Text("期限を有効にする")
@@ -373,7 +361,7 @@ struct SearchView: View {
                 }}
             NavigationLink(destination:
                             //検索ボタンを押したら表示されるビュー
-                            S_ListView(s_name: $s_name, s_quan: $s_quan, s_pday: $s_pday, s_fday: $s_fday, s_genre: $s_genre, flag: $flag)
+                            S_ListView(s_name: $s_name, s_pday: $s_pday, s_fday: $s_fday, s_genre: $s_genre, flag: $flag)
                             .navigationBarTitle("Search result", displayMode: .inline)
                 ){
                 Text("検索").padding(15)
@@ -390,14 +378,14 @@ struct SearchView: View {
 struct S_ListView: View {
     
     @Binding var s_name: String
-    @Binding var s_quan: String
+    //@Binding var s_memo: String
     @Binding var s_pday: Date
     @Binding var s_fday: Date
     @Binding var s_genre: String
     @Binding var flag: Bool
     let gen = ["食品", "日用雑貨" , "備品", "防災用品", "その他"]
     @State var name = ""
-    @State var quan = ""
+    @State var memo = ""
     @State var genre = "食品"
     @State var day =  Date()
     @ObservedObject var getModel = get_data()
@@ -425,21 +413,21 @@ struct S_ListView: View {
             }
     
     //検索条件の関数
-    private func s_check(s_genre: String, s_name: String, s_quan: String, s_pday: Date, s_fday: Date, d_genre: String, d_name: String, d_quan: String, d_day: Date, flag: Bool) -> Bool {
+    private func s_check(s_genre: String, s_name: String, s_pday: Date, s_fday: Date, d_genre: String, d_name: String, d_day: Date, flag: Bool) -> Bool {
         var TF = false
         let cal = Calendar(identifier: .gregorian)
         if !flag {
-            if s_name.isEmpty && s_quan.isEmpty{
+            if s_name.isEmpty{
                 if s_genre == d_genre{
                         TF = true
                     }
             }else{
                 if s_genre == "選択しない"{
-                    if s_name == d_name || s_quan == d_quan{
+                    if s_name == d_name{
                         TF = true
                     }
                 }else{
-                    if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
+                    if s_genre == d_genre && s_name == d_name{
                         TF = true
                     }}
             }
@@ -450,17 +438,17 @@ struct S_ListView: View {
             if deff >= 0 {
                 for i in 0...deff {
                     if cal.dateComponents([.day], from: s_pday.addingTimeInterval(TimeInterval(60 * 60 * 24 * i)), to: d_day).day! == 0{
-                        if s_name.isEmpty && s_quan.isEmpty{
+                        if s_name.isEmpty{
                             if s_genre == d_genre{
                                     TF = true
                                 }
                         }else{
                             if s_genre == "選択しない"{
-                                if s_name == d_name || s_quan == d_quan{
+                                if s_name == d_name{
                                     TF = true
                                 }
                             }else{
-                                if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
+                                if s_genre == d_genre && s_name == d_name{
                                     TF = true
                                 }}}
                     }
@@ -469,17 +457,17 @@ struct S_ListView: View {
             }else{
                 for i in 0...abs(deff) {
                     if cal.dateComponents([.day], from: s_fday.addingTimeInterval(TimeInterval(60 * 60 * 24 * i)), to: d_day).day! == 0{
-                        if s_name.isEmpty && s_quan.isEmpty{
+                        if s_name.isEmpty{
                             if s_genre == d_genre{
                                     TF = true
                                 }
                         }else{
                             if s_genre == "選択しない"{
-                                if s_name == d_name || s_quan == d_quan{
+                                if s_name == d_name{
                                     TF = true
                                 }
                             }else{
-                                if s_genre == d_genre && s_name == d_name || s_quan == d_quan{
+                                if s_genre == d_genre && s_name == d_name{
                                     TF = true
                                 }}
                         }}
@@ -496,7 +484,7 @@ struct S_ListView: View {
         List {
             ForEach(getModel.dataEntities.freeze(), id: \.id) { datas in
                 //検索条件に引っ掛かれば表示
-                if s_check(s_genre: self.s_genre, s_name: self.s_name, s_quan: self.s_quan, s_pday: self.s_pday, s_fday: self.s_fday, d_genre: datas.genre, d_name: datas.name, d_quan: datas.quan, d_day: datas.day, flag: self.flag) {
+                if s_check(s_genre: self.s_genre, s_name: self.s_name, s_pday: self.s_pday, s_fday: self.s_fday, d_genre: datas.genre, d_name: datas.name, d_day: datas.day, flag: self.flag) {
                 NavigationLink(destination:
                             VStack{
                                 Form{
@@ -509,35 +497,31 @@ struct S_ListView: View {
                                         }
                                         Spacer()
                                         }
-                                    VStack{
-                                        Text("登録済み："+"\(datas.genre)")
-                                        Picker(selection: $genre, label: Text("ジャンルを選択：")) {
+                                    Picker(selection: $genre, label: Text("ジャンル：")) {
                                                         ForEach(gen, id: \.self) { Gen in  // id指定の繰り返し
                                                             Text(Gen)
-                                                        }}}
+                                                        }}
                                     HStack{
                                     Text("品名：")
                                         TextField("登録済み：「"+"\(datas.name)" + " 」", text: $name).textFieldStyle(RoundedBorderTextFieldStyle())}
                                 HStack{
-                                    Text("個数：")
-                                    TextField("登録済み：「"+"\(datas.quan)" + " 」", text: $quan).textFieldStyle(RoundedBorderTextFieldStyle())}
-                                HStack{
-                                    Text("登録済み期限：")
-                                    Text("\(datas.day,style: .date)")
-                                    Spacer()
+                                    Text("メモ：")
+                                    TextField("登録済み：「"+"\(datas.memo)" + " 」", text: $memo).textFieldStyle(RoundedBorderTextFieldStyle())}
+                                DatePicker("期限:", selection: $day, displayedComponents: .date)
                                 }
-                                DatePicker("新しい期限を選択", selection: $day, displayedComponents: .date)
-                                }
-                                BackView(name: $name, quan: $quan, genre: $genre, day: $day, i_d: $i_d, empty_alert: $empty_alert)
+                                BackView(name: $name, memo: $memo, genre: $genre, day: $day, i_d: $i_d, empty_alert: $empty_alert)
                                     .padding(15)
-                                        }.onTapGesture{
+                                        }.onAppear(perform: {
+                                            self.genre = datas.genre
+                                            self.name = datas.name
+                                            self.memo = datas.memo
+                                            self.day = datas.day
                                             self.i_d = datas.id
-                                            print("tapgesture")
-                                            }
+                                            }) //リストをタップして編集画面を表示すると行う処理、これで編集画面に保存したデータが表示される
                         ){
                 //リストの内容
                 VStack{
-                    Text("\(datas.name)" + "　" + "\(datas.quan)")
+                    Text("\(datas.name)")
                     Text("\(datas.day,style: .date)")
                 }
                 }}
@@ -549,7 +533,7 @@ struct S_ListView: View {
 //検索後の更新で戻るための更新ボタン
 struct BackView: View {
     @Binding var name: String
-    @Binding var quan: String
+    @Binding var memo: String
     @Binding var genre: String
     @Binding var day: Date
     @Binding var i_d: Int
@@ -560,7 +544,7 @@ struct BackView: View {
     
     var body: some View {
         Button(action: {
-            if self.name.isEmpty || self.quan.isEmpty {
+            if self.name.isEmpty{
                 self.empty_alert = true
                 self.updateAlert = true
             }else{
@@ -572,31 +556,26 @@ struct BackView: View {
             }
             .alert(isPresented: $updateAlert) {
                 if self.empty_alert {
-                    return Alert(title: Text("全部入力してね"))
+                    return Alert(title: Text("品名を入力してね"))
                 }else{
                     return Alert(title: Text("データ更新完了"), dismissButton: .default(Text("OK"),
                         action: {
                             let config = Realm.Configuration(schemaVersion :1)
-                            print("更新ボタン")
                             do{
                                 let realm = try Realm(configuration: config)
                                 let result = realm.objects(realm_data.self)
                                 try realm.write({
-                                    print(result)
                                     for i in result{
                                         if i.id == i_d{
                                             i.name = self.name
-                                            i.quan = self.quan
+                                            i.memo = self.memo
                                             i.day = self.day
                                             i.genre = self.genre
                                             realm.add(i)
-                                            print(i.id)
                                         }
                                     }
-                                    print(i_d)
-                                    print("success")
                                     self.name = ""
-                                    self.quan = ""
+                                    self.memo = ""
                                     self.genre = "食品"
                                     self.day = Date()
                                     self.presentationMode.wrappedValue.dismiss()

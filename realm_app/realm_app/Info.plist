@@ -30,7 +30,7 @@
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIImageName</key>
-		<string>kan2_200</string>
+		<string>200</string>
 		<key>UIColorName</key>
 		<string>bg</string>
 	</dict>
