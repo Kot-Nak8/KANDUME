@@ -8,6 +8,7 @@
 
 import SwiftUI
 import RealmSwift
+import UserNotifications
 //import UIKit
 
 
@@ -55,27 +56,19 @@ struct ContentView: View {
             //アプリ起動時にonApperでsetting.alertがfalseならshowingAlertをtrueにして.alertを表示
         }.onAppear(perform: {
             sleep(1)//ビューの表示を１秒遅らせることで一瞬で消えてしまうタイトル画面を１秒にする
-            if !setting.alert_p {
-                self.showingAlert = true //setting.alert_pがfalseの場合アラート表示
-            }
-            })
-            //アラートでどちらのボタンを押してもsetting.alert_pがtrueになるのでonApperでshowing_Alertがtrueにはならなくなる
-            //よってアプリ初回起動時のみにアラートが表示される
-         .alert(isPresented: $showingAlert) {
-                    Alert(title: Text("通知設定"),
-                          message: Text("品物の通知を受け取れるよ！"),
-                          primaryButton: .default(Text("拒否"),action:{
-                                                    //拒否された時の処理
-                                                    print("拒否された")
-                                                    setting.alert_p = true
-                          }),
-                          secondaryButton: .default(Text("許可"),action:{
-                                                    //許可された時の処理
-                                                    print("許可された")
-                                                    setting.Alert_Push = true
-                                                    setting.alert_p = true
-                          }))
+            //プッシュ通知の機能
+            //通知をカレンダーにした
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { success, error in
+                if success {
+                    print("All set!")
+                    
+                } else if let error = error {
+                    print(error.localizedDescription)
                 }
+            }
+        }
+            
+                    )
           .accentColor(.orange) //オレンジ色にしてみた
     }
 }
@@ -115,10 +108,19 @@ struct ListView: View {
     @State var name = ""
     @State var memo = ""
     @State var day =  Date()
+    @State var i_d = Int()
+    //画像の機能に必要な変数
+    @State var image = Data()
+    //画像の機能に必要な変数
+    @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State var selectedImage: UIImage?
+    @State private var isImagePickerDisplay = false
+    
     @ObservedObject var getModel = get_data()
     @State private var updateAlert = false
     @State private var empty_alert = false
     @Environment(\.editMode) var envEditMode
+    @State var link_appear = true
     let gen = ["食品", "日用雑貨" , "備品", "防災用品", "その他"]
     
     //リストを削除する関数
@@ -147,16 +149,47 @@ struct ListView: View {
             ForEach(getModel.dataEntities.freeze(), id: \.id) { datas in
                 NavigationLink(destination:
                             VStack{
+                                Spacer()
+                                //写真を追加するボタン
+                                if selectedImage != nil {
+                                    Image(uiImage: selectedImage!)
+                                         .resizable()
+                                         .aspectRatio(contentMode: .fill)
+                                         .clipShape(Circle())
+                                        .frame(width: 100, height: 100)
+                                }else if datas.image.count != 0 {
+                                        Image(uiImage: UIImage(data: datas.image)!)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .clipShape(Circle())
+                                            .frame(width: 100, height:100)
+                                }else{
+                                    Image(systemName: "snow")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .clipShape(Circle())
+                                        .frame(width: 100, height: 100)
+                                }
+                                HStack{
+                                    Button(action: {
+                                        self.sourceType = .camera
+                                        self.isImagePickerDisplay.toggle()
+
+                                    }){
+                                        Text("カメラ")
+                                    }.padding()
+                                    
+                                    Button(action: {
+                                        self.sourceType = .photoLibrary
+                                        self.isImagePickerDisplay.toggle()
+                //                        image = (selectedImage?.jpegData(compressionQuality: 1))!
+                                    }){
+                                        Text("アルバム")
+                                    }.padding()
+                                    }.sheet(isPresented: self.$isImagePickerDisplay) {
+                                        ImagePickerView(selectedImage: self.$selectedImage, sourceType: self.sourceType)
+                                    }
                                 Form{
-                                    HStack{
-                                        Spacer()
-                                        Button(action: {
-                                            print("写真追加")
-                                        }){
-                                            Text("写真を選択")
-                                        }
-                                        Spacer()
-                                        }
                                     Picker(selection: $genre, label: Text("ジャンル：")) {
                                                         ForEach(gen, id: \.self) { Gen in  // id指定の繰り返し
                                                             Text(Gen)
@@ -170,59 +203,42 @@ struct ListView: View {
                                 DatePicker("期限：", selection: $day, displayedComponents: .date)
                                 }
                                     //要素の変更編ボタン
-                                Button(action: {
-                                    if self.name.isEmpty{
-                                        self.empty_alert = true
-                                        self.updateAlert = true
-                                    }else{
-                                        self.empty_alert = false
-                                        let config = Realm.Configuration(schemaVersion :1)
-                                        do{
-                                            let realm = try Realm(configuration: config)
-                                            let result = realm.objects(realm_data.self)
-                                            self.updateAlert = true
-                                            try realm.write({
-                                                //繰り返しと条件一致での方法しか考えられなかった
-                                                for i in result{
-                                                    if i.id == datas.id{
-                                                        i.name = self.name
-                                                        i.memo = self.memo
-                                                        i.day = self.day
-                                                        i.genre = self.genre
-                                                        realm.add(i)
-                                                    }
-                                                }
-                                            })
-                                        }
-                                        catch{
-                                            print(error.localizedDescription)
-                                        }
-                                        }
-                                    }) {
-                                    Text("更新")
-                                    }
-                                    .alert(isPresented: $updateAlert) {
-                                        if self.empty_alert {
-                                            return Alert(title: Text("品名を入力してね"))
-                                        }else{
-                                            return Alert(title: Text("データ更新完了"))
-                                        }  // 詳細メッセージの追加
-                                    }
+                                BackView(name: $name, memo: $memo, genre: $genre, day: $day, image: $image, i_d: $i_d, empty_alert: $empty_alert, selectedImage: $selectedImage)
                                     .padding(10)
-                                    Spacer()
                             }.onAppear(perform: {
-                                self.genre = datas.genre
-                                self.name = datas.name
-                                self.memo = datas.memo
-                                self.day = datas.day
+                                if self.link_appear{
+                                    self.genre = datas.genre
+                                    self.name = datas.name
+                                    self.memo = datas.memo
+                                    self.day = datas.day
+                                    self.i_d = datas.id
+                                    self.link_appear = false
+                                }
+                                if self.selectedImage != nil {
+                                    datas.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
+                                }
                                 }) //リストをタップして編集画面を表示すると行う処理、これで編集画面に保存したデータが表示される
                              .navigationBarTitle("Edit Menu", displayMode: .inline)
                         ){
                 //リストの内容
-                VStack{
-                Text("\(datas.name)")
-                Text("\(datas.day,style: .date)")
-                }}}.onDelete(perform: envEditMode?.wrappedValue.isEditing ?? false ? self.deleteRow : nil)
+                    HStack{
+                        if datas.image.count != 0 {
+                            Image(uiImage: UIImage(data: datas.image)!)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .clipShape(Circle())
+                                .frame(width: 50, height:50)
+                    }else{
+                        Image(systemName: "snow")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .clipShape(Circle())
+                            .frame(width: 50, height: 50)
+                    }
+                    VStack{
+                    Text("\(datas.name)")
+                    Text("\(datas.day,style: .date)")
+                    }}.onAppear(perform: {self.link_appear = true})}}.onDelete(perform: envEditMode?.wrappedValue.isEditing ?? false ? self.deleteRow : nil)
         }
     }
 }
@@ -239,6 +255,12 @@ struct AddView: View {
     @State var name = ""
     @State var memo = ""
     @State var day =  Date()
+    //画像の機能に必要な変数
+    @State var image = Data()
+    @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State private var selectedImage: UIImage?
+    @State private var isImagePickerDisplay = false
+    
     @State private var showingAlert = false
     @State private var empty_alert = false
     @State var genre = "食品"
@@ -247,17 +269,40 @@ struct AddView: View {
     var body: some View {
             VStack{
             //入力するところ
+                Spacer()
                 //写真を追加するボタン
+                if selectedImage != nil {
+                    Image(uiImage: selectedImage!)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .clipShape(Circle())
+                        .frame(width: 100, height:100)
+                }else{
+                    Image(systemName: "snow")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .clipShape(Circle())
+                        .frame(width: 100, height: 100)
+                }
+                HStack{
+                    Button(action: {
+                        self.sourceType = .camera
+                        self.isImagePickerDisplay.toggle()
+                    }){
+                        Text("カメラ")
+                    }.padding()
+                    
+                    Button(action: {
+                        self.sourceType = .photoLibrary
+                        self.isImagePickerDisplay.toggle()
+                    }){
+                        Text("アルバム")
+                    }.padding()
+                    }.sheet(isPresented: self.$isImagePickerDisplay) {
+                        ImagePickerView(selectedImage: self.$selectedImage, sourceType: self.sourceType)
+                    }
+                
                 Form{
-                    HStack{
-                        Spacer()
-                        Button(action: {
-                            print("写真追加")
-                        }){
-                            Text("写真を選択")
-                        }
-                        Spacer()
-                        }
                     
                 //ジャンルや品名、メモの入力
                     Picker(selection: $genre, label: Text("ジャンルを選択：")) {
@@ -294,6 +339,10 @@ struct AddView: View {
                             newdata.memo = self.memo
                             newdata.genre = self.genre
                             newdata.day = self.day
+                            if self.selectedImage != nil {
+                                newdata.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
+                            }
+
                             try realm.write({
                                 realm.add(newdata)
                                 print("success")
@@ -301,8 +350,36 @@ struct AddView: View {
                                 self.memo = ""
                                 self.genre = "食品"
                                 self.day = Date()
+                                self.image = Data()
                                 self.showingAlert = true
                             })
+                            //プッシュ通知の機能
+                            //通知をカレンダーにした
+                            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { success, error in
+                                if success {
+                                    print("All set!")
+                                    
+                                } else if let error = error {
+                                    print(error.localizedDescription)
+                                }
+                                
+                                // second
+                                let content = UNMutableNotificationContent()
+                                content.title = "今日までのものがあるみたいよ"
+                                content.subtitle = "アプリで確認してみよう"
+                                content.sound = UNNotificationSound.default
+
+                                // show this notification five seconds from now
+                                let targetDate = Calendar.current.dateComponents([.year,.month,.day], from: self.day)
+                                
+                                let trigger = UNCalendarNotificationTrigger(dateMatching: targetDate, repeats: false)
+
+                                // choose a random identifier
+                                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+                                // add our notification request
+                                UNUserNotificationCenter.current().add(request)
+                            }
                         }
                         catch{
                             print(error.localizedDescription)
@@ -333,7 +410,7 @@ struct AddView: View {
 //検索のビュー
 struct SearchView: View {
     @State var s_name = ""
-    //@State var s_memo = ""
+//    @State var s_memo = ""
     @State var s_pday =  Date()
     @State var s_fday =  Date()
     @State var flag = false
@@ -388,10 +465,18 @@ struct S_ListView: View {
     @State var memo = ""
     @State var genre = "食品"
     @State var day =  Date()
+    //画像の機能に必要な変数
+    @State var image = Data()
+    //画像の機能に必要な変数
+    @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State var selectedImage: UIImage?
+    @State private var isImagePickerDisplay = false
+    
     @ObservedObject var getModel = get_data()
     @State private var updateAlert = false
     @State var empty_alert = false
     @State var i_d = Int()
+    @State var link_appear = true
     
     //リストを削除する関数
     private func deleteRow(offsets: IndexSet){
@@ -487,16 +572,45 @@ struct S_ListView: View {
                 if s_check(s_genre: self.s_genre, s_name: self.s_name, s_pday: self.s_pday, s_fday: self.s_fday, d_genre: datas.genre, d_name: datas.name, d_day: datas.day, flag: self.flag) {
                 NavigationLink(destination:
                             VStack{
+                                Spacer()
+                                if selectedImage != nil {
+                                    Image(uiImage: selectedImage!)
+                                         .resizable()
+                                         .aspectRatio(contentMode: .fill)
+                                         .clipShape(Circle())
+                                        .frame(width: 80, height:80)
+                                }else if datas.image.count != 0 {
+                                        Image(uiImage: UIImage(data: datas.image)!)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .clipShape(Circle())
+                                            .frame(width: 80, height:80)
+                                }else{
+                                    Image(systemName: "snow")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .clipShape(Circle())
+                                        .frame(width: 80, height: 80)
+                                }
+                                HStack{
+                                    Button(action: {
+                                        self.sourceType = .camera
+                                        self.isImagePickerDisplay.toggle()
+
+                                    }){
+                                        Text("カメラ")
+                                    }.padding()
+
+                                    Button(action: {
+                                        self.sourceType = .photoLibrary
+                                        self.isImagePickerDisplay.toggle()
+                                    }){
+                                        Text("アルバム")
+                                    }.padding()
+                                    }.sheet(isPresented: self.$isImagePickerDisplay) {
+                                        ImagePickerView(selectedImage: self.$selectedImage, sourceType: self.sourceType)
+                                    }
                                 Form{
-                                    HStack{
-                                        Spacer()
-                                        Button(action: {
-                                            print("写真追加")
-                                        }){
-                                            Text("写真を選択")
-                                        }
-                                        Spacer()
-                                        }
                                     Picker(selection: $genre, label: Text("ジャンル：")) {
                                                         ForEach(gen, id: \.self) { Gen in  // id指定の繰り返し
                                                             Text(Gen)
@@ -509,22 +623,44 @@ struct S_ListView: View {
                                     TextField("登録済み：「"+"\(datas.memo)" + " 」", text: $memo).textFieldStyle(RoundedBorderTextFieldStyle())}
                                 DatePicker("期限:", selection: $day, displayedComponents: .date)
                                 }
-                                BackView(name: $name, memo: $memo, genre: $genre, day: $day, i_d: $i_d, empty_alert: $empty_alert)
+                                BackView(name: $name, memo: $memo, genre: $genre, day: $day, image: $image, i_d: $i_d, empty_alert: $empty_alert, selectedImage: $selectedImage)
                                     .padding(15)
+                                
                                         }.onAppear(perform: {
+                                        if self.link_appear{
                                             self.genre = datas.genre
                                             self.name = datas.name
                                             self.memo = datas.memo
                                             self.day = datas.day
+//                                            if self.selectedImage != nil {
+//                                                datas.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
+//                                            }
+//                                            self.selectedImage = nil
                                             self.i_d = datas.id
-                                            }) //リストをタップして編集画面を表示すると行う処理、これで編集画面に保存したデータが表示される
+                                            self.link_appear = false
+                                                    }}
+                                        ) //リストをタップして編集画面を表示すると行う処理、これで編集画面に保存したデータが表示される
                         ){
                 //リストの内容
+                HStack{
+                    if datas.image.count != 0 {
+                        Image(uiImage: UIImage(data: datas.image)!)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .clipShape(Circle())
+                            .frame(width: 50, height:50)
+                    }else{
+                        Image(systemName: "snow")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .clipShape(Circle())
+                            .frame(width: 50, height: 50)
+                    }
                 VStack{
                     Text("\(datas.name)")
                     Text("\(datas.day,style: .date)")
                 }
-                }}
+                }.onAppear(perform: {self.link_appear = true})}}
             }.onDelete(perform: self.deleteRow)//スワイプで削除
         }
     }
@@ -536,8 +672,12 @@ struct BackView: View {
     @Binding var memo: String
     @Binding var genre: String
     @Binding var day: Date
+    @Binding var image:Data
     @Binding var i_d: Int
     @Binding var empty_alert: Bool
+
+    //画像の機能に必要な変数
+    @Binding var selectedImage: UIImage?
     //これで前のビューに戻る
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @State private var updateAlert = false
@@ -571,15 +711,47 @@ struct BackView: View {
                                             i.memo = self.memo
                                             i.day = self.day
                                             i.genre = self.genre
+                                            if self.selectedImage != nil {
+                                                i.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
+                                            }
                                             realm.add(i)
                                         }
+//                                        self.selectedImage = nil
                                     }
                                     self.name = ""
                                     self.memo = ""
                                     self.genre = "食品"
                                     self.day = Date()
+                                    self.image = Data()
                                     self.presentationMode.wrappedValue.dismiss()
                                 })
+                                //プッシュ通知の機能
+                                //通知をカレンダーにした
+                                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { success, error in
+                                    if success {
+                                        print("All set!")
+                                        
+                                    } else if let error = error {
+                                        print(error.localizedDescription)
+                                    }
+                                    
+                                    // second
+                                    let content = UNMutableNotificationContent()
+                                    content.title = "今日までのものがあるみたいよ"
+                                    content.subtitle = "アプリで確認してみよう"
+                                    content.sound = UNNotificationSound.default
+
+                                    // show this notification five seconds from now
+                                    let targetDate = Calendar.current.dateComponents([.year,.month,.day], from: self.day)
+                                    
+                                    let trigger = UNCalendarNotificationTrigger(dateMatching: targetDate, repeats: false)
+
+                                    // choose a random identifier
+                                    let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+                                    // add our notification request
+                                    UNUserNotificationCenter.current().add(request)
+                                }
                             }
                             catch{
                                 print(error.localizedDescription)

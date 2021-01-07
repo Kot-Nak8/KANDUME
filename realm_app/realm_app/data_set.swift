@@ -16,6 +16,9 @@ class realm_data :Object{
     @objc dynamic var name = ""
     @objc dynamic var memo = ""
     @objc dynamic var day = Date()
+    //画像の変数
+    @objc dynamic var image = Data()
+    
     private static var config = Realm.Configuration(schemaVersion :1)
     private static var realm = try! Realm(configuration: config)
     //idを主キーに設定
