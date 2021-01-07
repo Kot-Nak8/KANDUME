@@ -123,6 +123,28 @@ struct ListView: View {
     @State var link_appear = true
     let gen = ["食品", "日用雑貨" , "備品", "防災用品", "その他"]
     
+    @State var day_change = "当日"
+    let day_change_list = ["当日","一日前","二日前","三日前","一週間前","一ヶ月前"]
+    let day_change_dict = [
+        "当日": 0,
+        "一日前": 1,
+        "二日前": 2,
+        "三日前": 3,
+        "一週間前": 7,
+        "一ヶ月前": 30
+    ]
+
+    @State var day_time = "7:00"
+    let day_time_list = ["7:00","8:00","9:00","10:00","17:00","18:00"]
+    let day_time_dict = [
+        "7:00": 7,
+        "8:00": 8,
+        "9:00": 9,
+        "10:00": 10,
+        "17:00": 17,
+        "18:00": 18
+    ]
+    
     //リストを削除する関数
     private func deleteRow(offsets: IndexSet) {
         let index: Int = offsets.first ?? -1
@@ -201,16 +223,28 @@ struct ListView: View {
                                     Text("メモ：")
                                     TextField("登録済み：「"+"\(datas.memo)"+" 」", text: $memo).textFieldStyle(RoundedBorderTextFieldStyle())}
                                 DatePicker("期限：", selection: $day, displayedComponents: .date)
+                                    Picker(selection: $day_change, label: Text("いつ通知しますか？：")) {
+                                                ForEach(day_change_list, id: \.self) { Gen in  // id指定の繰り返し
+                                                    Text(Gen)
+                                                }}
+                                    
+                                    Picker(selection: $day_time, label: Text("何時に通知しますか？：")) {
+                                                ForEach(day_time_list, id: \.self) { Gen in  // id指定の繰り返し
+                                                    Text(Gen)
+                                                }}
                                 }
                                     //要素の変更編ボタン
-                                BackView(name: $name, memo: $memo, genre: $genre, day: $day, image: $image, i_d: $i_d, empty_alert: $empty_alert, selectedImage: $selectedImage)
+                                BackView(name: $name, memo: $memo, genre: $genre, day: $day, image: $image, i_d: $i_d, empty_alert: $empty_alert, day_change: $day_change, day_time: $day_time, selectedImage: $selectedImage)
                                     .padding(10)
-                            }.onAppear(perform: {
+                            }
+                                .onAppear(perform: {
                                 if self.link_appear{
                                     self.genre = datas.genre
                                     self.name = datas.name
                                     self.memo = datas.memo
                                     self.day = datas.day
+                                    self.day_change = datas.day_change
+                                    self.day_time = datas.day_time
                                     self.i_d = datas.id
                                     self.link_appear = false
                                 }
@@ -265,6 +299,27 @@ struct AddView: View {
     @State private var empty_alert = false
     @State var genre = "食品"
     let gen = ["食品", "日用雑貨" , "備品", "防災用品", "その他"]
+    @State var day_change = "当日"
+    let day_change_list = ["当日","一日前","二日前","三日前","一週間前","一ヶ月前"]
+    let day_change_dict = [
+        "当日": 0,
+        "一日前": 1,
+        "二日前": 2,
+        "三日前": 3,
+        "一週間前": 7,
+        "一ヶ月前": 30
+    ]
+
+    @State var day_time = "7:00"
+    let day_time_list = ["7:00","8:00","9:00","10:00","17:00","18:00"]
+    let day_time_dict = [
+        "7:00": 7,
+        "8:00": 8,
+        "9:00": 9,
+        "10:00": 10,
+        "17:00": 17,
+        "18:00": 18
+    ]
     
     var body: some View {
             VStack{
@@ -318,7 +373,17 @@ struct AddView: View {
                         TextField ("(例：2個買った)", text: $memo).textFieldStyle(RoundedBorderTextFieldStyle())
                         
                         }
-                    DatePicker("期限を選択", selection: $day, displayedComponents: .date)}
+                    DatePicker("期限を選択", selection: $day, displayedComponents: .date)
+                Picker(selection: $day_change, label: Text("いつ通知しますか？：")) {
+                            ForEach(day_change_list, id: \.self) { Gen in  // id指定の繰り返し
+                                Text(Gen)
+                            }}
+                
+                Picker(selection: $day_time, label: Text("何時に通知しますか？：")) {
+                            ForEach(day_time_list, id: \.self) { Gen in  // id指定の繰り返し
+                                Text(Gen)
+                            }}
+                }
 
                 //入力したのを保存するボタン
                 Button(action: {
@@ -339,6 +404,8 @@ struct AddView: View {
                             newdata.memo = self.memo
                             newdata.genre = self.genre
                             newdata.day = self.day
+                            newdata.day_change = self.day_change
+                            newdata.day_time = self.day_time
                             if self.selectedImage != nil {
                                 newdata.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
                             }
@@ -351,6 +418,8 @@ struct AddView: View {
                                 self.genre = "食品"
                                 self.day = Date()
                                 self.image = Data()
+//                                self.day_change = "当日"
+//                                self.day_time = "7:00"
                                 self.showingAlert = true
                             })
                             //プッシュ通知の機能
@@ -370,7 +439,10 @@ struct AddView: View {
                                 content.sound = UNNotificationSound.default
 
                                 // show this notification five seconds from now
-                                let targetDate = Calendar.current.dateComponents([.year,.month,.day], from: self.day)
+                                var targetDate = Calendar.current.dateComponents([.year,.month,.day], from: self.day)
+                                targetDate.day! -= day_change_dict[String(self.day_change)]!
+                                targetDate.hour = day_time_dict[String(self.day_time)]!
+                                
                                 
                                 let trigger = UNCalendarNotificationTrigger(dateMatching: targetDate, repeats: false)
 
@@ -379,6 +451,8 @@ struct AddView: View {
 
                                 // add our notification request
                                 UNUserNotificationCenter.current().add(request)
+                                self.day_change = "当日"
+                                self.day_time = "7:00"
                             }
                         }
                         catch{
@@ -477,6 +551,28 @@ struct S_ListView: View {
     @State var empty_alert = false
     @State var i_d = Int()
     @State var link_appear = true
+    
+    @State var day_change = "当日"
+    let day_change_list = ["当日","一日前","二日前","三日前","一週間前","一ヶ月前"]
+    let day_change_dict = [
+        "当日": 0,
+        "一日前": 1,
+        "二日前": 2,
+        "三日前": 3,
+        "一週間前": 7,
+        "一ヶ月前": 30
+    ]
+
+    @State var day_time = "7:00"
+    let day_time_list = ["7:00","8:00","9:00","10:00","17:00","18:00"]
+    let day_time_dict = [
+        "7:00": 7,
+        "8:00": 8,
+        "9:00": 9,
+        "10:00": 10,
+        "17:00": 17,
+        "18:00": 18
+    ]
     
     //リストを削除する関数
     private func deleteRow(offsets: IndexSet){
@@ -622,8 +718,18 @@ struct S_ListView: View {
                                     Text("メモ：")
                                     TextField("登録済み：「"+"\(datas.memo)" + " 」", text: $memo).textFieldStyle(RoundedBorderTextFieldStyle())}
                                 DatePicker("期限:", selection: $day, displayedComponents: .date)
+                                    
+                                Picker(selection: $day_change, label: Text("いつ通知しますか？：")) {
+                                            ForEach(day_change_list, id: \.self) { Gen in  // id指定の繰り返し
+                                                    Text(Gen)
+                                                }}
+                                    
+                                Picker(selection: $day_time, label: Text("何時に通知しますか？：")) {
+                                            ForEach(day_time_list, id: \.self) { Gen in  // id指定の繰り返し
+                                                Text(Gen)
+                                            }}
                                 }
-                                BackView(name: $name, memo: $memo, genre: $genre, day: $day, image: $image, i_d: $i_d, empty_alert: $empty_alert, selectedImage: $selectedImage)
+                                BackView(name: $name, memo: $memo, genre: $genre, day: $day, image: $image, i_d: $i_d, empty_alert: $empty_alert, day_change: $day_change, day_time: $day_time, selectedImage: $selectedImage)
                                     .padding(15)
                                 
                                         }.onAppear(perform: {
@@ -632,12 +738,15 @@ struct S_ListView: View {
                                             self.name = datas.name
                                             self.memo = datas.memo
                                             self.day = datas.day
+                                            self.day_change = datas.day_change
+                                            self.day_time = datas.day_time
 //                                            if self.selectedImage != nil {
 //                                                datas.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
 //                                            }
 //                                            self.selectedImage = nil
                                             self.i_d = datas.id
                                             self.link_appear = false
+                                            
                                                     }}
                                         ) //リストをタップして編集画面を表示すると行う処理、これで編集画面に保存したデータが表示される
                         ){
@@ -675,12 +784,32 @@ struct BackView: View {
     @Binding var image:Data
     @Binding var i_d: Int
     @Binding var empty_alert: Bool
+    @Binding var day_change: String
+    @Binding var day_time: String
 
     //画像の機能に必要な変数
     @Binding var selectedImage: UIImage?
     //これで前のビューに戻る
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @State private var updateAlert = false
+    
+    let day_change_dict = [
+        "当日": 0,
+        "一日前": 1,
+        "二日前": 2,
+        "三日前": 3,
+        "一週間前": 7,
+        "一ヶ月前": 30
+    ]
+    
+    let day_time_dict = [
+        "7:00": 7,
+        "8:00": 8,
+        "9:00": 9,
+        "10:00": 10,
+        "17:00": 17,
+        "18:00": 18
+    ]
     
     var body: some View {
         Button(action: {
@@ -711,6 +840,8 @@ struct BackView: View {
                                             i.memo = self.memo
                                             i.day = self.day
                                             i.genre = self.genre
+                                            i.day_change = self.day_change
+                                            i.day_time = self.day_time
                                             if self.selectedImage != nil {
                                                 i.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
                                             }
@@ -723,6 +854,8 @@ struct BackView: View {
                                     self.genre = "食品"
                                     self.day = Date()
                                     self.image = Data()
+//                                    self.day_change = ""
+//                                    self.day_change = ""
                                     self.presentationMode.wrappedValue.dismiss()
                                 })
                                 //プッシュ通知の機能
@@ -742,7 +875,11 @@ struct BackView: View {
                                     content.sound = UNNotificationSound.default
 
                                     // show this notification five seconds from now
-                                    let targetDate = Calendar.current.dateComponents([.year,.month,.day], from: self.day)
+                                    var targetDate = Calendar.current.dateComponents([.year,.month,.day], from: self.day)
+                                    targetDate.day! -= day_change_dict[String(self.day_change)]!
+                                    targetDate.hour = day_time_dict[String(self.day_time)]!
+                                    
+//                                    print(targetDate)
                                     
                                     let trigger = UNCalendarNotificationTrigger(dateMatching: targetDate, repeats: false)
 
@@ -751,7 +888,11 @@ struct BackView: View {
 
                                     // add our notification request
                                     UNUserNotificationCenter.current().add(request)
+                                    self.day_change = "当日"
+                                    self.day_time = "7:00"
                                 }
+//                                self.day_change = ""
+//                                self.day_change = ""
                             }
                             catch{
                                 print(error.localizedDescription)
