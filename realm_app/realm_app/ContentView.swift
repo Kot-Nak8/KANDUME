@@ -290,6 +290,8 @@ struct ListView: View {
         "18:00": 18
     ]
     
+    let today = Date()
+    
     //リストを削除する関数
     private func deleteRow(offsets: IndexSet) {
         let index: Int = offsets.first ?? -1
@@ -400,6 +402,7 @@ struct ListView: View {
                              .navigationBarTitle("Edit Menu", displayMode: .inline)
                         ){
                 //リストの内容
+//                    let diff1 = cal.dateComponents([.day], from: today, to: datas.day)
                     HStack{
                         if datas.image.count != 0 {
                             Image(uiImage: UIImage(data: datas.image)!)
@@ -416,7 +419,12 @@ struct ListView: View {
                     }
                     VStack{
                     Text("\(datas.name)")
-                    Text("\(datas.day,style: .date)")
+                        if Calendar(identifier: .gregorian).dateComponents([.day], from: today, to: datas.day).day! < 7 {
+                            Text("\(datas.day,style: .date)").foregroundColor(Color.orange)
+                        }else{
+                            Text("\(datas.day,style: .date)")
+                        }
+                        
                     }}.onAppear(perform: {
                         self.link_appear = true
                     })}}.onDelete(perform: envEditMode?.wrappedValue.isEditing ?? false ? self.deleteRow : nil)
