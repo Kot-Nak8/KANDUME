@@ -158,16 +158,40 @@ struct ContentView: View {
                     ScrollView{
                     VStack{
                         Spacer()
-                        Text("本アプリについて").font(.title)
+                        HStack{
+                            Image("200")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                            Text("本アプリについて").font(.title)
+                        Image("200")
+                            .resizable()
+                            .frame(width: 50, height: 50)
+                        }
                         ShowMoreView(text: Description)
                         
+                        HStack{
+                            Image("200")
+                                .resizable()
+                                .frame(width: 50, height: 50)
                         Text("本アプリの使い方").font(.title)
+                            Image("200")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                        }
                         ShowMoreView(text: Description_app)
                         
+                        HStack{
+                            Image("200")
+                                .resizable()
+                                .frame(width: 50, height: 50)
                         Text("利用規約").font(.title)
+                            Image("200")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                        }
                         ShowMoreView(text: TermsOfUse)
                         
-                        }.navigationBarTitle("escription", displayMode: .inline)
+                        }.navigationBarTitle("Description", displayMode: .inline)
                 }
                 }.tabItem {
                     Image(systemName: "gearshape")
@@ -277,6 +301,8 @@ struct ListView: View {
                         let de = getModel.dataEntities[index].id
                         for i in result{
                             if i.id == de{
+                                //プッシュ通知の削除
+                                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [String(i.id)])
                                 realm.delete(i)
                                 print(index)
                             }}})
@@ -372,6 +398,7 @@ struct ListView: View {
                                 if self.selectedImage != nil {
                                     datas.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
                                 }
+                                    self.selectedImage = nil
                                 }) //リストをタップして編集画面を表示すると行う処理、これで編集画面に保存したデータが表示される
                              .navigationBarTitle("Edit Menu", displayMode: .inline)
                         ){
@@ -410,6 +437,7 @@ struct AddView: View {
     @State var name = ""
     @State var memo = ""
     @State var day =  Date()
+    @State var day_id = Int()
     //画像の機能に必要な変数
     @State var image = Data()
     @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
@@ -521,6 +549,7 @@ struct AddView: View {
                             //保存されてるデータの最大のidを取得
                             var maxId: Int { return try! Realm().objects(realm_data.self).sorted(byKeyPath: "id").last?.id ?? 0 }
                             newdata.id = maxId + 1
+                            self.day_id = newdata.id
                             newdata.name = self.name
                             newdata.memo = self.memo
                             newdata.genre = self.genre
@@ -530,19 +559,7 @@ struct AddView: View {
                             if self.selectedImage != nil {
                                 newdata.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
                             }
-
-                            try realm.write({
-                                realm.add(newdata)
-                                print("success")
-                                self.name = ""
-                                self.memo = ""
-                                self.genre = "食品"
-                                self.day = Date()
-                                self.image = Data()
-//                                self.day_change = "当日"
-//                                self.day_time = "7:00"
-                                self.showingAlert = true
-                            })
+//                            self.selectedImage=nil
                             //プッシュ通知の機能
                             //通知をカレンダーにした
                             UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { success, error in
@@ -568,13 +585,30 @@ struct AddView: View {
                                 let trigger = UNCalendarNotificationTrigger(dateMatching: targetDate, repeats: false)
 
                                 // choose a random identifier
-                                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+                                let request = UNNotificationRequest(identifier: String(self.day_id), content: content, trigger: trigger)
 
                                 // add our notification request
                                 UNUserNotificationCenter.current().add(request)
                                 self.day_change = "当日"
                                 self.day_time = "7:00"
                             }
+                            
+
+                            try realm.write({
+                                realm.add(newdata)
+                                print("success")
+                                self.name = ""
+                                self.memo = ""
+                                self.genre = "食品"
+                                self.day = Date()
+                                self.day_id = Int()
+                                self.image = Data()
+//                                self.day_change = "当日"
+//                                self.day_time = "7:00"
+                                self.selectedImage=nil
+                                self.showingAlert = true
+                            })
+                            
                         }
                         catch{
                             print(error.localizedDescription)
@@ -660,6 +694,7 @@ struct S_ListView: View {
     @State var memo = ""
     @State var genre = "食品"
     @State var day =  Date()
+    
     //画像の機能に必要な変数
     @State var image = Data()
     //画像の機能に必要な変数
@@ -1005,7 +1040,7 @@ struct BackView: View {
                                     let trigger = UNCalendarNotificationTrigger(dateMatching: targetDate, repeats: false)
 
                                     // choose a random identifier
-                                    let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+                                    let request = UNNotificationRequest(identifier: String(self.i_d), content: content, trigger: trigger)
 
                                     // add our notification request
                                     UNUserNotificationCenter.current().add(request)
