@@ -586,8 +586,8 @@ struct AddView: View {
                                 
                                 // second
                                 let content = UNMutableNotificationContent()
-                                content.title = "今日までのものがあるみたいよ"
-                                content.subtitle = "アプリで確認してみよう"
+                                content.title = "期限近いものがあるみたいです！"
+                                content.subtitle = "アプリで確認してみよう！"
                                 content.sound = UNNotificationSound.default
 
                                 // show this notification five seconds from now
@@ -1043,8 +1043,8 @@ struct BackView: View {
                                     
                                     // second
                                     let content = UNMutableNotificationContent()
-                                    content.title = "今日までのものがあるみたいよ"
-                                    content.subtitle = "アプリで確認してみよう"
+                                    content.title = "期限が近いものがあるみたいです！"
+                                    content.subtitle = "アプリで確認してみよう！"
                                     content.sound = UNNotificationSound.default
 
                                     // show this notification five seconds from now
