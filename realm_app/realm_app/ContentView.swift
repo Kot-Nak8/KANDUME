@@ -393,12 +393,9 @@ struct ListView: View {
                                     self.day_change = datas.day_change
                                     self.day_time = datas.day_time
                                     self.i_d = datas.id
+                                    self.selectedImage = nil
                                     self.link_appear = false
                                 }
-                                if self.selectedImage != nil {
-                                    datas.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
-                                }
-                                    self.selectedImage = nil
                                 }) //リストをタップして編集画面を表示すると行う処理、これで編集画面に保存したデータが表示される
                              .navigationBarTitle("Edit Menu", displayMode: .inline)
                         ){
@@ -420,7 +417,9 @@ struct ListView: View {
                     VStack{
                     Text("\(datas.name)")
                     Text("\(datas.day,style: .date)")
-                    }}.onAppear(perform: {self.link_appear = true})}}.onDelete(perform: envEditMode?.wrappedValue.isEditing ?? false ? self.deleteRow : nil)
+                    }}.onAppear(perform: {
+                        self.link_appear = true
+                    })}}.onDelete(perform: envEditMode?.wrappedValue.isEditing ?? false ? self.deleteRow : nil)
         }
     }
 }
@@ -896,6 +895,7 @@ struct S_ListView: View {
                                             self.day = datas.day
                                             self.day_change = datas.day_change
                                             self.day_time = datas.day_time
+                                            self.selectedImage = nil
 //                                            if self.selectedImage != nil {
 //                                                datas.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
 //                                            }
@@ -1000,10 +1000,11 @@ struct BackView: View {
                                             i.day_time = self.day_time
                                             if self.selectedImage != nil {
                                                 i.image = (self.selectedImage?.jpegData(compressionQuality: 1))!
+                                                
                                             }
                                             realm.add(i)
                                         }
-//                                        self.selectedImage = nil
+//                                       self.selectedImage = nil
                                     }
                                     self.name = ""
                                     self.memo = ""
@@ -1012,6 +1013,7 @@ struct BackView: View {
                                     self.image = Data()
 //                                    self.day_change = ""
 //                                    self.day_change = ""
+                                    self.selectedImage = nil
                                     self.presentationMode.wrappedValue.dismiss()
                                 })
                                 //プッシュ通知の機能
