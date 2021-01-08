@@ -16,6 +16,7 @@
 		87ABE30E259874CD00560A95 /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = 87ABE30D259874CD00560A95 /* Realm */; };
 		87ABE310259874CD00560A95 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 87ABE30F259874CD00560A95 /* RealmSwift */; };
 		87ABE315259875E800560A95 /* data_set.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87ABE314259875E800560A95 /* data_set.swift */; };
+		E6787E9E25A7E8260089955E /* ShowMoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6787E9D25A7E8260089955E /* ShowMoreView.swift */; };
 		E6BD3AD125A6F30D0024418E /* ImagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6BD3AD025A6F30D0024418E /* ImagePickerView.swift */; };
 		E6BD3AD625A6F3CC0024418E /* LocalPush.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6BD3AD525A6F3CC0024418E /* LocalPush.swift */; };
 /* End PBXBuildFile section */
@@ -51,6 +52,7 @@
 		87ABE2FB259873D200560A95 /* realm_appUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = realm_appUITests.swift; sourceTree = "<group>"; };
 		87ABE2FD259873D200560A95 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87ABE314259875E800560A95 /* data_set.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = data_set.swift; sourceTree = "<group>"; };
+		E6787E9D25A7E8260089955E /* ShowMoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowMoreView.swift; sourceTree = "<group>"; };
 		E6BD3AD025A6F30D0024418E /* ImagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePickerView.swift; sourceTree = "<group>"; };
 		E6BD3AD525A6F3CC0024418E /* LocalPush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPush.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -107,6 +109,7 @@
 			children = (
 				87ABE2DE259873CD00560A95 /* realm_appApp.swift */,
 				87ABE2E0259873CD00560A95 /* ContentView.swift */,
+				E6787E9D25A7E8260089955E /* ShowMoreView.swift */,
 				E6BD3AD025A6F30D0024418E /* ImagePickerView.swift */,
 				E6BD3AD525A6F3CC0024418E /* LocalPush.swift */,
 				87ABE314259875E800560A95 /* data_set.swift */,
@@ -283,6 +286,7 @@
 				87ABE2E1259873CD00560A95 /* ContentView.swift in Sources */,
 				87ABE2DF259873CD00560A95 /* realm_appApp.swift in Sources */,
 				E6BD3AD625A6F3CC0024418E /* LocalPush.swift in Sources */,
+				E6787E9E25A7E8260089955E /* ShowMoreView.swift in Sources */,
 				87ABE315259875E800560A95 /* data_set.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -450,10 +454,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.kota.realm-app";
+				PRODUCT_BUNDLE_IDENTIFIER = com.KotaKimi.KANDUME;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -472,10 +476,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.kota.realm-app";
+				PRODUCT_BUNDLE_IDENTIFIER = com.KotaKimi.KANDUME;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

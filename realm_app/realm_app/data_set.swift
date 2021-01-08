@@ -18,6 +18,8 @@ class realm_data :Object{
     @objc dynamic var day = Date()
     //画像の変数
     @objc dynamic var image = Data()
+    @objc dynamic var day_change = ""
+    @objc dynamic var day_time = ""
     
     private static var config = Realm.Configuration(schemaVersion :1)
     private static var realm = try! Realm(configuration: config)
