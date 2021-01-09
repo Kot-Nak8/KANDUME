@@ -418,7 +418,7 @@ struct ListView: View {
                     }
                     VStack{
                         Text("\(datas.name)")
-                            .frame(width: 200, height: 25)
+                            .frame(width: 180, height: 25)
 //                        HStack{
                         if diff1 < 7 {
                             Text("\(datas.day,style: .date)").foregroundColor(Color.orange)
