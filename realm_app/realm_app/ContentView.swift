@@ -11,7 +11,6 @@ import RealmSwift
 import UserNotifications
 //import UIKit
 
-
 struct ContentView: View {
     @ObservedObject var setting = Setting()//UserDefaultsなので変更が保持される
     @State var showingAlert = false //通知の許可アラートのフラグ
@@ -21,17 +20,13 @@ struct ContentView: View {
     気が付いたら缶詰の期限がいつの間にか過ぎていたことってありませんか？
     「モノの管理」って大変です・・・できれば簡潔に、シンプルな操作で「モノの管理」をしたい・・・
     そんな悩みを解決しようと生まれたのがこのアプリ「KANDUME」です。
-
     「KANDUME」は缶詰や保存食など、ついつい消費期限を忘れてしまいがちな食品、モノを管理します。
-
     「モノの管理」というめんどくさいことは「KANDUME」を使ってあなたのケータイの奥底にしまっておきましょう。
-
     ＜主な機能＞
     ・缶詰、保存食などの登録（名前、カテゴリ、メモ、期限日にち設定、いつ通知するかなど）
     ・一覧表示（名前、カテゴリ、期限日にち、画面表示の切り替え）
     ・検索機能（名前、カテゴリ、期限の期間などにより検索ができる）
     ・アラーム機能（選んだ日時日時にローカルプッシュ通知が送られます）
-
     """
     
     private let Description_app = """
@@ -131,8 +126,6 @@ struct ContentView: View {
     本サービスに関して紛争が生じた場合には，本アプリの本店所在地を管轄する裁判所を専属的合意管轄とします。
     本アプリでの損失は一切の責任を持ちません。
     以上
-
-
     """
     
     var body: some View {
@@ -204,7 +197,6 @@ struct ContentView: View {
                     Image(systemName: "gearshape")
                     Text("Description")}
                 //設定タブここまで
-
             //アプリ起動時にonApperでsetting.alertがfalseならshowingAlertをtrueにして.alertを表示
         }.onAppear(perform: {
             sleep(1)//ビューの表示を１秒遅らせることで一瞬で消えてしまうタイトル画面を１秒にする
@@ -425,7 +417,9 @@ struct ListView: View {
                             .frame(width: 50, height: 50)
                     }
                     VStack{
-                    Text("\(datas.name)")
+                        Text("\(datas.name)")
+                            .frame(width: 200, height: 25)
+                        
                         if Calendar(identifier: .gregorian).dateComponents([.day], from: today, to: datas.day).day! < 7 {
                             Text("\(datas.day,style: .date)").foregroundColor(Color.orange)
                         }else{
@@ -792,6 +786,8 @@ struct S_ListView: View {
                         if s_name.isEmpty{
                             if s_genre == d_genre{
                                     TF = true
+                                }else if s_genre == "選択しない"{
+                                    TF = true
                                 }
                         }else{
                             if s_genre == "選択しない"{
@@ -810,6 +806,8 @@ struct S_ListView: View {
                     if cal.dateComponents([.day], from: s_fday.addingTimeInterval(TimeInterval(60 * 60 * 24 * i)), to: d_day).day! == 0{
                         if s_name.isEmpty{
                             if s_genre == d_genre{
+                                    TF = true
+                                }else if s_genre == "選択しない"{
                                     TF = true
                                 }
                         }else{
