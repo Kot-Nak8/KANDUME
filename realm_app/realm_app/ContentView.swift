@@ -334,7 +334,7 @@ struct ListView: View {
                                             .clipShape(Circle())
                                             .frame(width: 100, height:100)
                                 }else{
-                                    Image(systemName: "snow")
+                                    Image("200")
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
                                         .clipShape(Circle())
@@ -401,7 +401,7 @@ struct ListView: View {
                              .navigationBarTitle("Edit Menu", displayMode: .inline)
                         ){
                 //リストの内容
-//                    let diff1 = cal.dateComponents([.day], from: today, to: datas.day)
+                    let diff1 = Calendar(identifier: .gregorian).dateComponents([.day], from: today, to: datas.day).day!
                     HStack{
                         if datas.image.count != 0 {
                             Image(uiImage: UIImage(data: datas.image)!)
@@ -410,7 +410,7 @@ struct ListView: View {
                                 .clipShape(Circle())
                                 .frame(width: 50, height:50)
                     }else{
-                        Image(systemName: "snow")
+                        Image("200")
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .clipShape(Circle())
@@ -419,12 +419,14 @@ struct ListView: View {
                     VStack{
                         Text("\(datas.name)")
                             .frame(width: 200, height: 25)
-                        
-                        if Calendar(identifier: .gregorian).dateComponents([.day], from: today, to: datas.day).day! < 7 {
+//                        HStack{
+                        if diff1 < 7 {
                             Text("\(datas.day,style: .date)").foregroundColor(Color.orange)
                         }else{
                             Text("\(datas.day,style: .date)")
                         }
+//                        Text("あと\(diff1)日")
+//                        }
                         
                     }}.onAppear(perform: {
                         self.link_appear = true
@@ -490,7 +492,7 @@ struct AddView: View {
                         .clipShape(Circle())
                         .frame(width: 100, height:100)
                 }else{
-                    Image(systemName: "snow")
+                    Image("200")
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .clipShape(Circle())
@@ -738,6 +740,7 @@ struct S_ListView: View {
         "18:00": 18
     ]
     
+    let today = Date()
     //リストを削除する関数
     private func deleteRow(offsets: IndexSet){
         let index: Int = offsets.first ?? -1
@@ -850,7 +853,7 @@ struct S_ListView: View {
                                             .clipShape(Circle())
                                             .frame(width: 80, height:80)
                                 }else{
-                                    Image(systemName: "snow")
+                                    Image("200")
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
                                         .clipShape(Circle())
@@ -928,7 +931,7 @@ struct S_ListView: View {
                             .clipShape(Circle())
                             .frame(width: 50, height:50)
                     }else{
-                        Image(systemName: "snow")
+                        Image("200")
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .clipShape(Circle())
@@ -936,7 +939,12 @@ struct S_ListView: View {
                     }
                 VStack{
                     Text("\(datas.name)")
-                    Text("\(datas.day,style: .date)")
+                        .frame(width: 200, height: 25)
+                    if Calendar(identifier: .gregorian).dateComponents([.day], from: today, to: datas.day).day! < 7 {
+                        Text("\(datas.day,style: .date)").foregroundColor(Color.orange)
+                    }else{
+                        Text("\(datas.day,style: .date)")
+                    }
                 }
                 }.onAppear(perform: {self.link_appear = true})}}
             }.onDelete(perform: self.deleteRow)//スワイプで削除
