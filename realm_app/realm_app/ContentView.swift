@@ -199,6 +199,10 @@ struct ContentView: View {
                 //設定タブここまで
             //アプリ起動時にonApperでsetting.alertがfalseならshowingAlertをtrueにして.alertを表示
         }.onAppear(perform: {
+            if !self.setting.alert_p{
+                self.showingAlert = true
+                self.setting.alert_p = true
+            }
             sleep(1)//ビューの表示を１秒遅らせることで一瞬で消えてしまうタイトル画面を１秒にする
             //プッシュ通知の機能
             //通知をカレンダーにした
@@ -213,6 +217,10 @@ struct ContentView: View {
         }
             
                     )
+            .alert(isPresented: $showingAlert) {
+                    Alert(title: Text("追加してみよう！"),
+                          message: Text("「＋」ボタンから追加できるよ！")) 
+                }
           .accentColor(.orange) //オレンジ色にしてみた
     }
 }
