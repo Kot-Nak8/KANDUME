@@ -140,8 +140,10 @@ struct ContentView: View {
                                     .resizable()
                                     .frame(width: 20, height: 20)
                             }
-                        ,trailing: MyEditButton())
-                }.tabItem {
+                        )
+                        .toolbar { MyEditButton() } //.navigationBarItemsじゃなくて.toolbarにしたらバグが治った
+                }
+                .tabItem {
                         Image(systemName: "house")
                         Text("Home")}
                 //ホームタブここまで
@@ -235,14 +237,14 @@ struct MyEditButton: View {
     var body: some View {
         Button(action: {
             withAnimation() {
-                if editMode?.wrappedValue.isEditing == true {
-                    editMode?.wrappedValue = .inactive
+                if self.editMode?.wrappedValue.isEditing == true {
+                    self.editMode?.wrappedValue = .inactive
                 } else {
-                    editMode?.wrappedValue = .active
+                    self.editMode?.wrappedValue = .active
                 }
             }
         }) {
-            if editMode?.wrappedValue.isEditing == true {
+            if self.editMode?.wrappedValue.isEditing == true {
                 Image(systemName:"trash.slash")
             } else {
                 Image(systemName:"trash")
